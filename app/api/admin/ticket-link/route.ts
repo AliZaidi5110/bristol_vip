@@ -1,10 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
-import {
-  getServiceSupabase,
-  getTicketLink,
-  SETTINGS_ROW_ID,
-} from "@/lib/supabase";
+import { getTicketLink, setTicketLink } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -22,7 +18,6 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
-/** Read the currently saved link (admin-only, avoids caching surprises). */
 export async function GET(request: NextRequest) {
   if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,7 +26,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ ticketLink });
 }
 
-/** Update the single settings row with a new ticket link. */
 export async function POST(request: NextRequest) {
   if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -52,22 +46,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  try {
-    const supabase = getServiceSupabase();
-    const { error } = await supabase
-      .from("site_settings")
-      .update({ ticket_link: ticketLink, updated_at: new Date().toISOString() })
-      .eq("id", SETTINGS_ROW_ID);
-
-    if (error) {
-      return NextResponse.json(
-        { error: "Could not save. Check your Supabase configuration." },
-        { status: 500 },
-      );
-    }
-  } catch {
+  const stored = await setTicketLink(ticketLink);
+  if (!stored) {
     return NextResponse.json(
-      { error: "Server is not configured for saving." },
+      {
+        error:
+          "Could not save. Add Vercel KV (Storage tab) or Supabase env vars to enable live editing.",
+      },
       { status: 500 },
     );
   }

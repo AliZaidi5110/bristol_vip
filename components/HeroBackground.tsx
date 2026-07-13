@@ -19,12 +19,12 @@ export default function HeroBackground({ videoSrc }: Props) {
   // Defer fetching the video until after first paint / idle time.
   useEffect(() => {
     const start = () => setShouldLoad(true);
-    if ("requestIdleCallback" in window) {
+    if (typeof window.requestIdleCallback === "function") {
       const id = window.requestIdleCallback(start, { timeout: 2000 });
       return () => window.cancelIdleCallback(id);
     }
-    const t = window.setTimeout(start, 600);
-    return () => window.clearTimeout(t);
+    const t = setTimeout(start, 600);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {

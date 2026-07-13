@@ -4,7 +4,7 @@ import About from "@/components/About";
 import EventSpotlight from "@/components/EventSpotlight";
 import Gallery from "@/components/Gallery";
 import Footer from "@/components/Footer";
-import { getTicketLink } from "@/lib/supabase";
+import { getTicketLink } from "@/lib/settings";
 
 // Always render fresh so an admin's ticket-link change goes live immediately.
 export const dynamic = "force-dynamic";
