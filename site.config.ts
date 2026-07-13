@@ -40,8 +40,8 @@ export const siteConfig = {
     logo: "/images/logo.png",
     /** Poster/fallback image shown while the hero video loads (or if missing). */
     heroPoster: "/images/IMG_8028.JPG.jpeg",
-    /** Full-bleed background video on the landing page hero. */
-    heroVideo: "/videos/IMG_8136.MP4",
+    /** Full-bleed background video on the landing page hero (compressed for web). */
+    heroVideo: "/videos/hero-compressed.mp4",
     /** Featured event flyer — carnival / Rum Punch stage shot. */
     eventFlyer: "/images/IMG_8018.JPG.jpeg",
     /** About section accent photo. */

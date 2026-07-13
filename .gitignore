@@ -31,9 +31,9 @@ DEPLOY-ENV.txt
 # vercel
 .vercel
 
-# Large hero videos (GitHub 100 MB file limit — use npm run compress-video)
-/public/videos/*.MP4
-/public/videos/*.mp4
+# Large source video only (GitHub 100 MB limit)
+/public/videos/IMG_8136.MP4
+/public/videos/IMG_8136*.MP4
 
 # typescript
 *.tsbuildinfo
