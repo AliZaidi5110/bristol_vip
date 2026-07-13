@@ -1,6 +1,6 @@
-import Image from "next/image";
 import { Mail } from "lucide-react";
 import { siteConfig } from "@/site.config";
+import BrandLogo from "./BrandLogo";
 import ContactForm from "./ContactForm";
 import SocialIcons from "./SocialIcons";
 import Reveal from "./Reveal";
@@ -40,18 +40,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-ink-line pt-8 sm:flex-row">
-          <div className="flex items-center gap-3">
-            <Image
-              src={siteConfig.assets.logo}
-              alt={`${siteConfig.brandName} logo`}
-              width={32}
-              height={32}
-              className="h-8 w-auto"
-            />
-            <span className="font-display text-sm uppercase tracking-[0.2em] text-white/80">
-              {siteConfig.brandName}
-            </span>
-          </div>
+          <BrandLogo size="footer" />
           <p className="text-sm text-white/50">
             &copy; {year} {siteConfig.brandName}. All rights reserved.
           </p>

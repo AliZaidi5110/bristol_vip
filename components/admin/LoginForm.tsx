@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Loader2, Lock } from "lucide-react";
-import { siteConfig } from "@/site.config";
+import BrandLogo from "@/components/BrandLogo";
 import { ADMIN_DASHBOARD_PATH } from "@/lib/routes";
 
 export default function LoginForm() {
@@ -43,13 +42,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-sm rounded-2xl border border-ink-line bg-ink-card p-8 shadow-2xl">
       <div className="flex flex-col items-center text-center">
-        <Image
-          src={siteConfig.assets.logo}
-          alt={`${siteConfig.brandName} logo`}
-          width={56}
-          height={56}
-          className="h-14 w-auto"
-        />
+        <BrandLogo size="admin" />
         <h1 className="mt-4 font-display text-2xl font-bold uppercase tracking-wide text-white">
           Admin Access
         </h1>

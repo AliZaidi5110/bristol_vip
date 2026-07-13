@@ -37,7 +37,7 @@ export const siteConfig = {
    * into /public/videos as IMG_8136.MP4 (from WhatsApp).
    */
   assets: {
-    logo: "/images/logo.svg",
+    logo: "/images/logo.png",
     /** Poster/fallback image shown while the hero video loads (or if missing). */
     heroPoster: "/images/IMG_8028.JPG.jpeg",
     /** Full-bleed background video on the landing page hero. */

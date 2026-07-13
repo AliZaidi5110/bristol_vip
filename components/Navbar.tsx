@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { siteConfig } from "@/site.config";
+import BrandLogo from "./BrandLogo";
 import GetTicketsButton from "./GetTicketsButton";
 
 const NAV_LINKS = [
@@ -35,18 +35,8 @@ export default function Navbar({ ticketLink }: { ticketLink: string }) {
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="#home" className="flex items-center gap-3" aria-label={siteConfig.brandName}>
-          <Image
-            src={siteConfig.assets.logo}
-            alt={`${siteConfig.brandName} logo`}
-            width={44}
-            height={44}
-            className="h-10 w-auto"
-            priority
-          />
-          <span className="font-display text-lg font-semibold uppercase tracking-[0.2em] text-white">
-            {siteConfig.brandName}
-          </span>
+        <Link href="#home" className="flex shrink-0 items-center" aria-label={siteConfig.brandName}>
+          <BrandLogo size="nav" priority />
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
