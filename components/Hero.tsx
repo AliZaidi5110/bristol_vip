@@ -31,7 +31,7 @@ export default function Hero({ ticketLink }: { ticketLink: string }) {
           {siteConfig.heroKicker}
         </p>
 
-        <h1 className="mt-5 animate-fade-up font-display text-5xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-7xl lg:text-8xl">
+        <h1 className="mt-5 animate-fade-up font-display text-4xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
           {siteConfig.brandName}
         </h1>
 
@@ -42,10 +42,10 @@ export default function Hero({ ticketLink }: { ticketLink: string }) {
         <div className="mt-10 flex animate-fade-up flex-col items-center justify-center gap-4 sm:flex-row">
           <GetTicketsButton href={ticketLink} className="!px-8 !py-4 text-base" />
           <a
-            href="#event"
+            href={siteConfig.ctas.heroSecondaryHref}
             className="inline-flex items-center justify-center rounded-full border border-white/25 px-8 py-4 text-sm font-semibold uppercase tracking-widest text-white transition-colors hover:border-white/70"
           >
-            See What&apos;s On
+            {siteConfig.ctas.heroSecondary}
           </a>
         </div>
       </div>

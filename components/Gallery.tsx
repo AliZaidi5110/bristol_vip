@@ -16,11 +16,14 @@ export default function Gallery() {
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
           <p className="text-center font-display text-sm uppercase tracking-[0.35em] text-gold">
-            The Moments
+            {siteConfig.sections.gallery.kicker}
           </p>
           <h2 className="mt-3 text-center font-display text-4xl font-bold uppercase tracking-tight text-white sm:text-5xl">
-            Gallery
+            {siteConfig.sections.gallery.heading}
           </h2>
+          <p className="mx-auto mt-3 max-w-md text-center text-sm uppercase tracking-[0.25em] text-white/50">
+            {siteConfig.sections.gallery.subheading}
+          </p>
           <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-gold to-transparent" />
         </Reveal>
 

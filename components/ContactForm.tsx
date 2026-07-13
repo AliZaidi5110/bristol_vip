@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Send } from "lucide-react";
+import { siteConfig } from "@/site.config";
 
 type Status = "idle" | "sending" | "success" | "error";
 
@@ -47,6 +48,15 @@ export default function ContactForm() {
     "w-full rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold";
 
   return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-white">
+          {siteConfig.sections.contact.formHeading}
+        </h3>
+        <p className="mt-1 text-sm text-white/50">
+          {siteConfig.sections.contact.formSubtext}
+        </p>
+      </div>
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <input
@@ -100,5 +110,6 @@ export default function ContactForm() {
         )}
       </div>
     </form>
+    </div>
   );
 }

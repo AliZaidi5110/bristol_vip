@@ -14,10 +14,10 @@ export default function EventSpotlight({ ticketLink }: { ticketLink: string }) {
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
           <p className="text-center font-display text-sm uppercase tracking-[0.35em] text-gold">
-            Next Up
+            {siteConfig.sections.upcomingEvents.kicker}
           </p>
           <h2 className="mt-3 text-center font-display text-4xl font-bold uppercase tracking-tight text-white sm:text-5xl">
-            Upcoming Event
+            {siteConfig.sections.upcomingEvents.heading}
           </h2>
         </Reveal>
 

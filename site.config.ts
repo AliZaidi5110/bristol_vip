@@ -2,12 +2,9 @@
  * -----------------------------------------------------------------------------
  * SITE CONFIG — edit everything about your brand here.
  * -----------------------------------------------------------------------------
- * This is the single place to change brand name, contact details, social links,
- * marketing copy, and which image files are used. No other files need editing
- * to rebrand the site.
+ * Copy sourced from https://www.bristolvip.co.uk
  *
- * NOTE: The "Get Tickets" link is intentionally NOT here — it is stored in
- * Supabase (site_settings table) and edited live from the /admin dashboard.
+ * NOTE: The "Get Tickets" link is stored in KV / Supabase and edited from /admin.
  */
 
 export type SocialLink = {
@@ -16,35 +13,26 @@ export type SocialLink = {
 };
 
 export const siteConfig = {
-  /** Brand name shown in the navbar, footer, metadata, etc. */
-  brandName: "Bristol VIP",
+  brandName: "Bristol VIP Events",
 
-  /** One-line SEO description. */
   description:
-    "Bristol VIP — premium club nights, bottomless brunches and unforgettable cultural events across the city. We Dine. We Drink. We Dance.",
+    "Bristol VIP Events Ltd — a Bristol-based grassroots events company creating vibrant, community-led music and cultural experiences across the city. In love with their city.",
 
-  /** Hero tagline (big text over the landing image). */
-  tagline: "We Dine. We Drink. We Dance.",
+  tagline: "In love with their city...",
 
-  /** Short label above the tagline in the hero. */
-  heroKicker: "Bristol's Premium Nightlife",
+  heroKicker: "Bristol VIP",
 
-  /** Contact email used in footer + contact form fallback. */
-  contactEmail: "hello@bristolvip.example",
+  contactEmail: "bristolvip1@gmail.com",
 
-  /**
-   * Brand media. Real event photos live in /public/images. Drop your hero video
-   * into /public/videos as IMG_8136.MP4 (from WhatsApp).
-   */
+  location: "Bristol, United Kingdom",
+
+  website: "https://www.bristolvip.co.uk",
+
   assets: {
     logo: "/images/logo.png",
-    /** Poster/fallback image shown while the hero video loads (or if missing). */
     heroPoster: "/images/IMG_8028.JPG.jpeg",
-    /** Full-bleed background video on the landing page hero (compressed for web). */
     heroVideo: "/videos/hero-compressed.mp4",
-    /** Featured event flyer — carnival / Rum Punch stage shot. */
     eventFlyer: "/images/IMG_8018.JPG.jpeg",
-    /** About section accent photo. */
     aboutImage: "/images/IMG_8036.JPG.jpeg",
     gallery: [
       "/images/IMG_7988.JPG.jpeg",
@@ -62,33 +50,59 @@ export const siteConfig = {
     ],
   },
 
-  /**
-   * Social links. Delete any you don't use — the footer/nav render only what's
-   * present here.
-   */
   socials: {
-    instagram: "https://instagram.com/",
-    whatsapp: "https://wa.me/440000000000",
-    tiktok: "https://tiktok.com/",
+    instagram: "https://instagram.com/bristol_vip_events",
   } as Record<string, string>,
 
-  /** The current / next event spotlight card on the home page. */
+  instagramHandle: "@bristol_vip_events",
+
   featuredEvent: {
-    title: "Jamaica Independence Party",
-    date: "Saturday, 1 August 2026",
-    location: "Central Bristol",
+    title: "Jamaican Independence Day",
+    date: "Coming Soon",
+    location: "Bristol, United Kingdom",
     description:
-      "Celebrate freedom, culture and rhythm as we turn the city gold, green and black for one unforgettable night. Live sound systems, island flavours and the best of Caribbean energy — this is the party the summer has been waiting for.",
+      "Celebrate Jamaican Independence with Bristol VIP — culture, music and pure vibes. Check our last event and get ready for the next one.",
   },
 
-  /** About section — original copy. Edit freely. */
   about: {
-    heading: "Who We Are",
+    heading: "Bristol VIP Events",
     paragraphs: [
-      "Bristol VIP was born from a simple belief: a night out should feel like an occasion. We create premium events that bring the city together — from intimate rooftop sessions to sold-out club nights and bottomless daytime brunches that spill effortlessly into the evening.",
-      "Over the years we've built a reputation for detail. The right room, the right sound, a crowd that knows how to celebrate, and moments you'll be talking about long after the lights come up. Every guest list, every playlist and every pour is chosen with intention.",
-      "Whatever we're throwing next, one promise stays the same — you dine well, you drink well, and you dance like the night belongs to you. Because with us, it does.",
+      "Bristol VIP is now in their 8th year of curating unforgettable events across the city. Known locally for highlights like the Rum Punch Festival, Block Party, Jamaican Independence Day and involvement in St Pauls Carnival.",
+      "Bristol VIP Events Ltd is a Bristol-based grassroots events company creating vibrant, community-led music and cultural experiences across the city.",
+      "The buzz of a Bristol VIP party is always the talk of the city and has people reminiscing for many days, weeks and months afterwards.",
     ],
+  },
+
+  sections: {
+    upcomingEvents: {
+      kicker: "Don't Miss Out",
+      heading: "Upcoming Events",
+    },
+    gallery: {
+      kicker: "Check our last event!",
+      heading: "VIBES!",
+      subheading: "Gallery",
+    },
+    contact: {
+      kicker: "Get Booked in!",
+      heading: "Contact Us",
+      description:
+        "Have questions about our events? Want to book Bristol VIP for your next celebration? We'd love to hear from you!",
+      formHeading: "How can we assist you?",
+      formSubtext: "Complete your details below and we'll get back to you.",
+    },
+    mailingList: {
+      heading: "Our Mailing List",
+      description:
+        "The buzz of a Bristol VIP party is always the talk of the city and has people reminiscing for many days, weeks and months afterwards. Join our mailing list to be the first in the know of all events, promotions and offers!",
+    },
+  },
+
+  ctas: {
+    heroSecondary: "Check our last event! VIBES!",
+    heroSecondaryHref: "#gallery",
+    getTickets: "Get Tickets",
+    getBookedIn: "Get Booked in!",
   },
 } as const;
 

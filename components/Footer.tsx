@@ -1,4 +1,4 @@
-import { Mail } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { siteConfig } from "@/site.config";
 import BrandLogo from "./BrandLogo";
 import ContactForm from "./ContactForm";
@@ -13,14 +13,13 @@ export default function Footer() {
         <div className="grid gap-12 lg:grid-cols-2">
           <Reveal>
             <p className="font-display text-sm uppercase tracking-[0.35em] text-gold">
-              Say Hello
+              {siteConfig.sections.contact.kicker}
             </p>
             <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-tight text-white sm:text-5xl">
-              Get In Touch
+              {siteConfig.sections.contact.heading}
             </h2>
             <p className="mt-4 max-w-md text-white/70">
-              Planning something special or want to be first on the guest list?
-              Drop us a message and our team will get back to you.
+              {siteConfig.sections.contact.description}
             </p>
 
             <a
@@ -31,7 +30,15 @@ export default function Footer() {
               {siteConfig.contactEmail}
             </a>
 
+            <p className="mt-3 inline-flex items-center gap-2 text-white/70">
+              <MapPin className="h-5 w-5 text-gold" aria-hidden="true" />
+              {siteConfig.location}
+            </p>
+
             <SocialIcons className="mt-6" />
+            <p className="mt-3 text-sm text-white/60">
+              Follow Us {siteConfig.instagramHandle}
+            </p>
           </Reveal>
 
           <Reveal delay={120}>
