@@ -1,0 +1,7 @@
+<svg width="800" height="800" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gallery placeholder 5">
+  <defs><linearGradient id="a" x1="0" y1="0" x2="800" y2="800" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1b1710"/><stop offset="1" stop-color="#050505"/></linearGradient></defs>
+  <rect width="800" height="800" fill="url(#a)"/>
+  <circle cx="400" cy="360" r="80" fill="none" stroke="#D4AF37" stroke-width="2" opacity="0.5"/>
+  <text x="400" y="375" text-anchor="middle" font-family="Oswald, Arial, sans-serif" font-size="60" font-weight="700" fill="#D4AF37" opacity="0.7">05</text>
+  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#7a7a7a">Gallery photo</text>
+</svg>

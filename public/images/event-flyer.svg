@@ -1,0 +1,18 @@
+<svg width="800" height="1000" viewBox="0 0 800 1000" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Event flyer placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#141414"/>
+      <stop offset="1" stop-color="#060606"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E9CE7A"/>
+      <stop offset="1" stop-color="#A8842B"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)"/>
+  <rect x="40" y="40" width="720" height="920" fill="none" stroke="url(#gold)" stroke-width="2" opacity="0.5"/>
+  <text x="400" y="420" text-anchor="middle" font-family="Oswald, Arial, sans-serif" font-size="58" font-weight="700" fill="url(#gold)" letter-spacing="3">JAMAICA</text>
+  <text x="400" y="490" text-anchor="middle" font-family="Oswald, Arial, sans-serif" font-size="58" font-weight="700" fill="#ffffff" letter-spacing="3">INDEPENDENCE</text>
+  <text x="400" y="560" text-anchor="middle" font-family="Oswald, Arial, sans-serif" font-size="40" font-weight="500" fill="url(#gold)" letter-spacing="8">PARTY</text>
+  <text x="400" y="640" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#8a8a8a">Placeholder  replace /public/images/event-flyer</text>
+</svg>
