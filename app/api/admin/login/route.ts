@@ -57,7 +57,16 @@ export async function POST(request: NextRequest) {
 
   resetRateLimit(ip);
 
-  const token = await createSessionToken();
+  let token: string;
+  try {
+    token = await createSessionToken();
+  } catch {
+    return NextResponse.json(
+      { error: "Server is not configured for login (missing SESSION_SECRET)." },
+      { status: 500 },
+    );
+  }
+
   const response = NextResponse.json({ ok: true });
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,

@@ -6,7 +6,7 @@ import { Loader2, Lock } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { ADMIN_DASHBOARD_PATH } from "@/lib/routes";
 
-export default function LoginForm() {
+export default function LoginForm({ configured = true }: { configured?: boolean }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,6 +31,12 @@ export default function LoginForm() {
       }
 
       const json = await res.json().catch(() => ({}));
+      if (res.status === 500 && json?.error?.includes("not configured")) {
+        setError(
+          "Admin is not set up on the server. Add SESSION_SECRET and ADMIN_PASSWORD_HASH in Vercel, then redeploy.",
+        );
+        return;
+      }
       setError(json?.error ?? "Login failed.");
     } catch {
       setError("Network error. Please try again.");
@@ -67,7 +73,7 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !configured}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-gold py-3 text-sm font-semibold uppercase tracking-widest text-ink transition-all hover:bg-gold-soft disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
