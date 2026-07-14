@@ -11,8 +11,12 @@ type Toast = { type: "success" | "error"; text: string } | null;
 
 export default function AdminDashboard({
   initialEvent,
+  storageStatus,
+  canSave,
 }: {
   initialEvent: SiteEventSettings;
+  storageStatus: string;
+  canSave: boolean;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialEvent);
@@ -107,8 +111,25 @@ export default function AdminDashboard({
         </h2>
         <p className="mt-1 text-sm text-white/50">
           Update the featured event card and every &ldquo;Get Tickets&rdquo; button.
-          Changes go live instantly.
+          Storage: <span className="text-white/70">{storageStatus}</span>
         </p>
+
+        {!canSave && (
+          <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
+            <p className="font-medium">Saving is not set up yet. Pick one option:</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-amber-100/90">
+              <li>
+                Vercel → <strong>Storage</strong> → <strong>Create KV</strong> →{" "}
+                <strong>Connect</strong> to this project → Redeploy
+              </li>
+              <li>
+                Or add <code className="text-amber-50">GITHUB_TOKEN</code> in Vercel
+                env vars (GitHub → Settings → Developer settings → Fine-grained token
+                with repo write access)
+              </li>
+            </ol>
+          </div>
+        )}
 
         <div className="mt-5 rounded-lg border border-ink-line bg-ink px-4 py-3">
           <p className="text-xs uppercase tracking-widest text-white/40">

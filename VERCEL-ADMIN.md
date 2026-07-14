@@ -52,11 +52,20 @@ The contact form works **without any setup** — it forwards submissions to `bri
 
 ---
 
-## Save event edits from admin (Vercel KV)
+## Save event edits from admin
+
+**Option A — Vercel KV (recommended)**
 
 Vercel → **Storage** → **Create KV** → **Connect** to your project → **Redeploy**
 
-Without KV, event fields fall back to `site.config.ts` / `TICKET_LINK` env var (admin save will fail).
+**Option B — GitHub token**
+
+1. GitHub → **Settings** → **Developer settings** → **Fine-grained tokens**
+2. Create token with **Contents: Read and write** on `bristol_vip` repo
+3. Vercel → **Environment Variables** → add `GITHUB_TOKEN` = your token
+4. **Redeploy**
+
+Without either option, the admin dashboard is read-only.
 
 ---
 

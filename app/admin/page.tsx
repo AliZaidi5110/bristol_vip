@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import { getSiteEvent } from "@/lib/settings";
+import { canSaveEvents, getSiteEvent, getStorageStatus } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -15,7 +15,11 @@ export default async function AdminPage() {
   const event = await getSiteEvent();
   return (
     <main className="bg-ink">
-      <AdminDashboard initialEvent={event} />
+      <AdminDashboard
+        initialEvent={event}
+        storageStatus={getStorageStatus()}
+        canSave={canSaveEvents()}
+      />
     </main>
   );
 }

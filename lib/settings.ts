@@ -1,5 +1,10 @@
 import { kv } from "@vercel/kv";
 import { siteConfig } from "@/site.config";
+import {
+  getEventFromGitHub,
+  hasGitHubWrite,
+  setEventOnGitHub,
+} from "./github-event-store";
 
 const KV_EVENT_KEY = "site_event";
 const KV_TICKET_KEY = "ticket_link"; // legacy
@@ -13,6 +18,8 @@ export type SiteEventSettings = {
   date: string;
   location: string;
 };
+
+export type StorageBackend = "kv" | "github" | "supabase";
 
 function defaults(): SiteEventSettings {
   const { featuredEvent } = siteConfig;
@@ -93,6 +100,9 @@ export async function getSiteEvent(): Promise<SiteEventSettings> {
   const fromKv = await getEventFromKv();
   if (fromKv) return fromKv;
 
+  const fromGitHub = normalizeEvent(await getEventFromGitHub());
+  if (fromGitHub) return fromGitHub;
+
   const fromDb = await getTicketFromSupabase();
   if (fromDb) return { ...defaults(), ticketLink: fromDb };
 
@@ -108,7 +118,7 @@ export async function getTicketLink(): Promise<string> {
 
 export async function setSiteEvent(
   settings: SiteEventSettings,
-): Promise<"kv" | "supabase" | null> {
+): Promise<StorageBackend | null> {
   if (hasKv()) {
     try {
       await kv.set(KV_EVENT_KEY, settings);
@@ -117,6 +127,11 @@ export async function setSiteEvent(
     } catch {
       // fall through
     }
+  }
+
+  if (hasGitHubWrite()) {
+    const ok = await setEventOnGitHub(settings);
+    if (ok) return "github";
   }
 
   if (hasSupabase()) {
@@ -141,7 +156,12 @@ export async function setSiteEvent(
 
 export function getStorageStatus(): string {
   if (hasKv()) return "Vercel KV";
+  if (hasGitHubWrite()) return "GitHub (data/site-event.json)";
   if (hasSupabase()) return "Supabase (ticket link only)";
   if (envTicketLink()) return "TICKET_LINK env var (read-only in admin)";
-  return "defaults from site.config.ts";
+  return "defaults from site.config.ts (read-only)";
+}
+
+export function canSaveEvents(): boolean {
+  return hasKv() || hasGitHubWrite() || hasSupabase();
 }

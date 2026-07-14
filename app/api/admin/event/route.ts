@@ -1,6 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
-import { getSiteEvent, setSiteEvent, type SiteEventSettings } from "@/lib/settings";
+import { getGitHubSetupHint } from "@/lib/github-event-store";
+import {
+  canSaveEvents,
+  getSiteEvent,
+  getStorageStatus,
+  setSiteEvent,
+  type SiteEventSettings,
+} from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -43,7 +50,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const event = await getSiteEvent();
-  return NextResponse.json({ event });
+  return NextResponse.json({
+    event,
+    storage: getStorageStatus(),
+    canSave: canSaveEvents(),
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -70,12 +81,15 @@ export async function POST(request: NextRequest) {
   if (!stored) {
     return NextResponse.json(
       {
-        error:
-          "Could not save. Connect Vercel KV (Storage tab) to enable live editing.",
+        error: `Could not save. ${getGitHubSetupHint()}`,
       },
       { status: 500 },
     );
   }
 
-  return NextResponse.json({ ok: true, event });
+  return NextResponse.json({
+    ok: true,
+    event,
+    storage: getStorageStatus(),
+  });
 }
