@@ -38,7 +38,10 @@ function envTicketLink(): string | null {
 }
 
 function hasKv(): boolean {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  return Boolean(
+    (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+      (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
+  );
 }
 
 function hasSupabase(): boolean {

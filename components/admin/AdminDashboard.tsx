@@ -116,18 +116,25 @@ export default function AdminDashboard({
 
         {!canSave && (
           <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
-            <p className="font-medium">Saving is not set up yet. Pick one option:</p>
-            <ol className="mt-2 list-decimal space-y-1 pl-5 text-amber-100/90">
+            <p className="font-medium">Saving is not set up yet. Easiest fix (5 min):</p>
+            <ol className="mt-2 list-decimal space-y-2 pl-5 text-amber-100/90">
               <li>
-                Vercel → <strong>Storage</strong> → <strong>Create KV</strong> →{" "}
-                <strong>Connect</strong> to this project → Redeploy
+                Open <strong>console.upstash.com</strong> → sign up free →{" "}
+                <strong>Create Redis database</strong>
               </li>
               <li>
-                Or add <code className="text-amber-50">GITHUB_TOKEN</code> in Vercel
-                env vars (GitHub → Settings → Developer settings → Fine-grained token
-                with repo write access)
+                Copy <strong>UPSTASH_REDIS_REST_URL</strong> and{" "}
+                <strong>UPSTASH_REDIS_REST_TOKEN</strong> from the database page
+              </li>
+              <li>
+                Vercel → project → <strong>Settings → Environment Variables</strong> →
+                add both (names exactly as above) → <strong>Redeploy</strong>
               </li>
             </ol>
+            <p className="mt-3 text-xs text-amber-200/80">
+              Or: Vercel → Storage → Create KV → Connect → Redeploy. Or add{" "}
+              <code className="text-amber-50">GITHUB_TOKEN</code> with repo write access.
+            </p>
           </div>
         )}
 
