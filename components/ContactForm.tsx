@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, MessageCircle, Send } from "lucide-react";
 import { siteConfig } from "@/site.config";
 
 type Status = "idle" | "sending" | "success" | "error";
@@ -135,6 +135,16 @@ export default function ContactForm() {
             )}
             {status === "sending" ? "Sending…" : "Send Message"}
           </button>
+
+          <a
+            href={siteConfig.socials.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#25D366]/50 bg-[#25D366]/10 px-6 py-3 text-sm font-semibold uppercase tracking-widest text-[#25D366] transition-all hover:bg-[#25D366]/20"
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </a>
 
           {message && (
             <p

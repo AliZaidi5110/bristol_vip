@@ -24,6 +24,10 @@ export const siteConfig = {
 
   contactEmail: "bristolvip1@gmail.com",
 
+  /** UK mobile — shown on site; wa.me uses international format without leading 0. */
+  whatsappPhone: "07894946374",
+  whatsappIntl: "447894946374",
+
   location: "Bristol, United Kingdom",
 
   website: "https://www.bristolvip.co.uk",
@@ -52,6 +56,8 @@ export const siteConfig = {
 
   socials: {
     instagram: "https://instagram.com/bristol_vip_events",
+    whatsapp:
+      "https://wa.me/447894946374?text=Hi%20Bristol%20VIP%20Events%2C%20I%27d%20like%20to%20get%20in%20touch.",
   } as Record<string, string>,
 
   instagramHandle: "@bristol_vip_events",

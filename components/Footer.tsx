@@ -1,4 +1,4 @@
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, MessageCircle } from "lucide-react";
 import { siteConfig } from "@/site.config";
 import BrandLogo from "./BrandLogo";
 import ContactForm from "./ContactForm";
@@ -28,6 +28,16 @@ export default function Footer() {
             >
               <Mail className="h-5 w-5 text-gold" aria-hidden="true" />
               {siteConfig.contactEmail}
+            </a>
+
+            <a
+              href={siteConfig.socials.whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#25D366]"
+            >
+              <MessageCircle className="h-5 w-5 text-[#25D366]" aria-hidden="true" />
+              WhatsApp {siteConfig.whatsappPhone}
             </a>
 
             <p className="mt-3 inline-flex items-center gap-2 text-white/70">
