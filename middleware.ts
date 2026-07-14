@@ -17,5 +17,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Protect the dashboard and anything beneath it. API routes handle their own
   // auth so they are intentionally excluded here.
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin", "/admin/:path*"],
 };

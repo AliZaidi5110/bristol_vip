@@ -8,17 +8,28 @@ export {
   verifySessionToken,
 } from "./session";
 
+function cleanEnv(value: string | undefined): string {
+  if (!value) return "";
+  return value.trim().replace(/^['"]|['"]$/g, "");
+}
+
 /**
- * Verify a plaintext password against the bcrypt hash stored in the
- * ADMIN_PASSWORD_HASH environment variable. Runs in the Node runtime only
- * (bcryptjs is not Edge-compatible), so keep this out of middleware.
+ * Verify admin password. Supports ADMIN_PASSWORD (plain, easiest on Vercel) or
+ * ADMIN_PASSWORD_HASH (bcrypt). Runs in Node runtime only — not middleware.
  */
 export async function verifyAdminPassword(password: string): Promise<boolean> {
-  const hash = process.env.ADMIN_PASSWORD_HASH;
-  if (!hash) {
-    throw new Error("ADMIN_PASSWORD_HASH env var is not set.");
-  }
   if (!password) return false;
+
+  const plain = cleanEnv(process.env.ADMIN_PASSWORD);
+  if (plain) {
+    return password === plain;
+  }
+
+  const hash = cleanEnv(process.env.ADMIN_PASSWORD_HASH);
+  if (!hash) {
+    throw new Error("Set ADMIN_PASSWORD or ADMIN_PASSWORD_HASH in env.");
+  }
+
   try {
     return await bcrypt.compare(password, hash);
   } catch {

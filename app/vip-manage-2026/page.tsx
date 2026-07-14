@@ -26,8 +26,8 @@ export default async function AdminLoginPage() {
         <div className="fixed inset-x-0 top-0 z-50 border-b border-red-500/40 bg-red-950/90 px-4 py-3 text-center text-sm text-red-200">
           Admin is not configured on this server yet. Add{" "}
           <code className="text-red-100">SESSION_SECRET</code> and{" "}
-          <code className="text-red-100">ADMIN_PASSWORD_HASH</code> in Vercel
-          → Settings → Environment Variables, then redeploy.
+          <code className="text-red-100">ADMIN_PASSWORD</code> in Vercel →
+          Settings → Environment Variables, then redeploy.
         </div>
       )}
       <LoginForm configured={isAdminConfigured()} />

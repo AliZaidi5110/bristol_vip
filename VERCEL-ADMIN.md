@@ -34,7 +34,7 @@ Copy from `C:\Users\LENOVO\OneDrive\Desktop\Bristol Vip\DEPLOY-ENV.txt`:
 | Variable | Purpose |
 |---|---|
 | `SESSION_SECRET` | Admin session |
-| `ADMIN_PASSWORD_HASH` | Admin password |
+| `ADMIN_PASSWORD` | Admin password (`BristolVIP2026!`) — **use this, not the hash** |
 | `TICKET_LINK` | Fallback ticket URL |
 | `RESEND_API_KEY` | **Contact form → email** to `bristolvip1@gmail.com` |
 

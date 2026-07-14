@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Lock } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { ADMIN_DASHBOARD_PATH } from "@/lib/routes";
 
 export default function LoginForm({ configured = true }: { configured?: boolean }) {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,19 +19,20 @@ export default function LoginForm({ configured = true }: { configured?: boolean 
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ password }),
       });
 
       if (res.ok) {
-        router.replace(ADMIN_DASHBOARD_PATH);
-        router.refresh();
+        // Full page load ensures the session cookie is sent to middleware.
+        window.location.assign(ADMIN_DASHBOARD_PATH);
         return;
       }
 
       const json = await res.json().catch(() => ({}));
       if (res.status === 500 && json?.error?.includes("not configured")) {
         setError(
-          "Admin is not set up on the server. Add SESSION_SECRET and ADMIN_PASSWORD_HASH in Vercel, then redeploy.",
+          "Admin is not set up on the server. Add SESSION_SECRET and ADMIN_PASSWORD in Vercel, then redeploy.",
         );
         return;
       }
@@ -70,10 +69,16 @@ export default function LoginForm({ configured = true }: { configured?: boolean 
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
+        {!configured && !error && (
+          <p className="text-sm text-amber-400/90">
+            Server not configured yet — login will fail until env vars are set on
+            Vercel.
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={loading || !configured}
+          disabled={loading}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-gold py-3 text-sm font-semibold uppercase tracking-widest text-ink transition-all hover:bg-gold-soft disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />}
