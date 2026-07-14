@@ -5,3 +5,6 @@
  */
 export const ADMIN_LOGIN_PATH = "/vip-manage-2026";
 export const ADMIN_DASHBOARD_PATH = "/admin";
+
+/** Bumped to verify Vercel picked up the latest admin login fix. */
+export const ADMIN_BUILD_TAG = "admin-v3-defaults";

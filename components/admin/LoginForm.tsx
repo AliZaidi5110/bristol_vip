@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Lock } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { ADMIN_DASHBOARD_PATH } from "@/lib/routes";
+import { DEFAULT_ADMIN_PASSWORD } from "@/lib/admin-credentials";
 
 export default function LoginForm({
   usingDefaults = false,
@@ -55,7 +56,9 @@ export default function LoginForm({
         <h1 className="mt-4 font-display text-2xl font-bold uppercase tracking-wide text-white">
           Admin Access
         </h1>
-        <p className="mt-1 text-sm text-white/50">Enter the password to continue.</p>
+        <p className="mt-1 text-sm text-white/50">
+          Password: <span className="text-gold">{DEFAULT_ADMIN_PASSWORD}</span>
+        </p>
       </div>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
