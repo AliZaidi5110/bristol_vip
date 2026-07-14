@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import { getTicketLink } from "@/lib/settings";
+import { getSiteEvent } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const ticketLink = await getTicketLink();
+  const event = await getSiteEvent();
   return (
     <main className="bg-ink">
-      <AdminDashboard initialLink={ticketLink} />
+      <AdminDashboard initialEvent={event} />
     </main>
   );
 }

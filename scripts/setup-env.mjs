@@ -23,6 +23,9 @@ TICKET_LINK=https://www.eventbrite.co.uk/
 # SUPABASE_SERVICE_ROLE_KEY=
 
 # Vercel KV vars are added automatically when you create a KV store in Vercel Storage
+
+# Contact form — get a free key at https://resend.com
+# RESEND_API_KEY=
 `;
 
 const deployGuide = `BRISTOL VIP — VERCEL ENVIRONMENT VARIABLES
@@ -53,6 +56,12 @@ Option A (recommended on Vercel):
 Option B (Supabase):
   Add NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY and run supabase/schema.sql
+
+CONTACT FORM EMAIL
+------------------
+1. Sign up at https://resend.com
+2. Create API key → add in Vercel as RESEND_API_KEY
+3. Redeploy — form submissions go to bristolvip1@gmail.com
 `;
 
 fs.writeFileSync(path.join(root, ".env.local"), envLocal);

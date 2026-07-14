@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 type Props = {
   videoSrc: string;
+  posterSrc: string;
 };
 
 /**
  * Full-bleed autoplaying hero video behind all landing-page text.
- * Poster image in Hero.tsx stays visible until the first frame is ready.
  */
-export default function HeroBackground({ videoSrc }: Props) {
+export default function HeroBackground({ videoSrc, posterSrc }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -18,34 +18,33 @@ export default function HeroBackground({ videoSrc }: Props) {
     const video = videoRef.current;
     if (!video) return;
 
-    const startPlayback = () => {
+    const play = () => {
       setReady(true);
-      video.play().catch(() => {
-        // Autoplay blocked — poster remains visible.
+      void video.play().catch(() => {
+        // Autoplay blocked on some browsers — poster stays visible.
       });
     };
 
-    // loadeddata fires sooner than canplay — better for large files.
-    video.addEventListener("loadeddata", startPlayback);
-    video.load();
+    video.addEventListener("loadeddata", play);
+    if (video.readyState >= 2) play();
 
-    return () => video.removeEventListener("loadeddata", startPlayback);
+    return () => video.removeEventListener("loadeddata", play);
   }, [videoSrc]);
 
   return (
     <video
       ref={videoRef}
+      src={videoSrc}
+      poster={posterSrc}
       autoPlay
       muted
       loop
       playsInline
       preload="auto"
       aria-hidden="true"
-      className={`absolute inset-0 z-[1] h-full w-full object-cover transition-opacity duration-1000 ${
+      className={`absolute inset-0 z-[1] h-full w-full object-cover transition-opacity duration-700 ${
         ready ? "opacity-100" : "opacity-0"
       }`}
-    >
-      <source src={videoSrc} type="video/mp4" />
-    </video>
+    />
   );
 }

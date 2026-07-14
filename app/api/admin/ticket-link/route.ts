@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
-import { getTicketLink, setTicketLink } from "@/lib/settings";
+import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
+import { getSiteEvent, setSiteEvent } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
@@ -18,12 +18,13 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
+/** Legacy endpoint — updates ticket link only, keeps other event fields. */
 export async function GET(request: NextRequest) {
   if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const ticketLink = await getTicketLink();
-  return NextResponse.json({ ticketLink });
+  const event = await getSiteEvent();
+  return NextResponse.json({ ticketLink: event.ticketLink });
 }
 
 export async function POST(request: NextRequest) {
@@ -46,12 +47,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const stored = await setTicketLink(ticketLink);
+  const current = await getSiteEvent();
+  const stored = await setSiteEvent({ ...current, ticketLink });
   if (!stored) {
     return NextResponse.json(
       {
         error:
-          "Could not save. Add Vercel KV (Storage tab) or Supabase env vars to enable live editing.",
+          "Could not save. Connect Vercel KV (Storage tab) to enable live editing.",
       },
       { status: 500 },
     );

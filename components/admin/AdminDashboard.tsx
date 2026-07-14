@@ -5,16 +5,35 @@ import { useRouter } from "next/navigation";
 import { Check, Link2, Loader2, LogOut, TriangleAlert } from "lucide-react";
 import { siteConfig } from "@/site.config";
 import { ADMIN_LOGIN_PATH } from "@/lib/routes";
+import type { SiteEventSettings } from "@/lib/settings";
 
 type Toast = { type: "success" | "error"; text: string } | null;
 
-export default function AdminDashboard({ initialLink }: { initialLink: string }) {
+export default function AdminDashboard({
+  initialEvent,
+}: {
+  initialEvent: SiteEventSettings;
+}) {
   const router = useRouter();
-  const [savedLink, setSavedLink] = useState(initialLink);
-  const [value, setValue] = useState(initialLink);
+  const [saved, setSaved] = useState(initialEvent);
+  const [form, setForm] = useState(initialEvent);
   const [saving, setSaving] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
+
+  const unchanged =
+    form.ticketLink === saved.ticketLink &&
+    form.title === saved.title &&
+    form.description === saved.description &&
+    form.date === saved.date &&
+    form.location === saved.location;
+
+  function updateField<K extends keyof SiteEventSettings>(
+    key: K,
+    value: SiteEventSettings[K],
+  ) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -22,10 +41,10 @@ export default function AdminDashboard({ initialLink }: { initialLink: string })
     setToast(null);
 
     try {
-      const res = await fetch("/api/admin/ticket-link", {
+      const res = await fetch("/api/admin/event", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketLink: value.trim() }),
+        body: JSON.stringify(form),
       });
       const json = await res.json().catch(() => ({}));
 
@@ -34,8 +53,10 @@ export default function AdminDashboard({ initialLink }: { initialLink: string })
         return;
       }
 
-      setSavedLink(json.ticketLink ?? value.trim());
-      setToast({ type: "success", text: "Ticket link updated — it's live now." });
+      const event = json.event ?? form;
+      setSaved(event);
+      setForm(event);
+      setToast({ type: "success", text: "Event updated — it's live on the site now." });
     } catch {
       setToast({ type: "error", text: "Network error. Please try again." });
     } finally {
@@ -82,49 +103,123 @@ export default function AdminDashboard({ initialLink }: { initialLink: string })
 
       <div className="mt-10 rounded-2xl border border-ink-line bg-ink-card p-6 sm:p-8">
         <h2 className="font-display text-xl font-semibold uppercase tracking-wide text-white">
-          Current Event Ticket Link
+          Upcoming Event
         </h2>
         <p className="mt-1 text-sm text-white/50">
-          This URL powers every &ldquo;Get Tickets&rdquo; button on the site.
+          Update the featured event card and every &ldquo;Get Tickets&rdquo; button.
           Changes go live instantly.
         </p>
 
         <div className="mt-5 rounded-lg border border-ink-line bg-ink px-4 py-3">
           <p className="text-xs uppercase tracking-widest text-white/40">
-            Currently saved
+            Current ticket link
           </p>
           <a
-            href={savedLink}
+            href={saved.ticketLink}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-1 flex items-center gap-2 break-all text-sm text-gold hover:underline"
           >
             <Link2 className="h-4 w-4 shrink-0" />
-            {savedLink}
+            {saved.ticketLink}
           </a>
         </div>
 
-        <form onSubmit={onSave} className="mt-6 space-y-4">
-          <label htmlFor="ticketLink" className="block text-sm font-medium text-white/80">
-            New ticket link
-          </label>
-          <input
-            id="ticketLink"
-            type="url"
-            required
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="https://www.eventbrite.co.uk/e/your-event"
-            className="w-full rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold"
-          />
+        <form onSubmit={onSave} className="mt-6 space-y-5">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-white/80">
+              Event title
+            </label>
+            <input
+              id="title"
+              type="text"
+              required
+              maxLength={200}
+              value={form.title}
+              onChange={(e) => updateField("title", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold"
+            />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="date" className="block text-sm font-medium text-white/80">
+                Date & time
+              </label>
+              <input
+                id="date"
+                type="text"
+                required
+                maxLength={120}
+                value={form.date}
+                onChange={(e) => updateField("date", e.target.value)}
+                placeholder="Saturday 15 March 2026 · 10pm"
+                className="mt-1 w-full rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="location"
+                className="block text-sm font-medium text-white/80"
+              >
+                Location
+              </label>
+              <input
+                id="location"
+                type="text"
+                required
+                maxLength={200}
+                value={form.location}
+                onChange={(e) => updateField("location", e.target.value)}
+                placeholder="Bristol city centre"
+                className="mt-1 w-full rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-white/80"
+            >
+              Description
+            </label>
+            <textarea
+              id="description"
+              required
+              rows={4}
+              maxLength={2000}
+              value={form.description}
+              onChange={(e) => updateField("description", e.target.value)}
+              className="mt-1 w-full resize-y rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="ticketLink"
+              className="block text-sm font-medium text-white/80"
+            >
+              Ticket link
+            </label>
+            <input
+              id="ticketLink"
+              type="url"
+              required
+              value={form.ticketLink}
+              onChange={(e) => updateField("ticketLink", e.target.value)}
+              placeholder="https://www.eventbrite.co.uk/e/your-event"
+              className="mt-1 w-full rounded-lg border border-ink-line bg-ink px-4 py-3 text-white placeholder-white/40 outline-none transition-colors focus:border-gold"
+            />
+          </div>
 
           <button
             type="submit"
-            disabled={saving || value.trim() === savedLink}
+            disabled={saving || unchanged}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-gold px-6 py-3 text-sm font-semibold uppercase tracking-widest text-ink transition-all hover:bg-gold-soft disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {saving ? "Saving…" : "Save"}
+            {saving ? "Saving…" : "Save event"}
           </button>
         </form>
 

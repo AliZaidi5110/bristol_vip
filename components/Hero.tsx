@@ -11,20 +11,25 @@ export default function Hero({ ticketLink }: { ticketLink: string }) {
       id="home"
       className="relative flex min-h-screen items-center justify-center overflow-hidden"
     >
-      {/* Poster image — always visible as fallback beneath the video */}
+      {/* Poster image beneath the video while it loads */}
       <Image
         src={siteConfig.assets.heroPoster}
         alt=""
         fill
         priority
         sizes="100vw"
-        className="object-cover"
+        className={`object-cover transition-opacity duration-700 ${
+          heroVideo ? "z-0" : "z-[1]"
+        }`}
       />
-      <HeroBackground videoSrc={heroVideo} />
+      <HeroBackground
+        videoSrc={heroVideo}
+        posterSrc={siteConfig.assets.heroPoster}
+      />
 
-      {/* Dark overlays so text stays readable over video/photo */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-ink" />
-      <div className="absolute inset-0 bg-black/35" />
+      {/* Overlays on top of video so text stays readable */}
+      <div className="absolute inset-0 z-[2] bg-gradient-to-b from-black/70 via-black/50 to-ink" />
+      <div className="absolute inset-0 z-[2] bg-black/25" />
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
         <p className="animate-fade-in font-display text-sm uppercase tracking-[0.35em] text-gold">

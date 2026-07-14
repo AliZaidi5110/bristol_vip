@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { CalendarDays, MapPin } from "lucide-react";
 import { siteConfig } from "@/site.config";
+import type { SiteEventSettings } from "@/lib/settings";
 import GetTicketsButton from "./GetTicketsButton";
 import Reveal from "./Reveal";
 
-export default function EventSpotlight({ ticketLink }: { ticketLink: string }) {
-  const { featuredEvent } = siteConfig;
+export default function EventSpotlight({ event }: { event: SiteEventSettings }) {
   return (
     <section
       id="event"
@@ -26,7 +26,7 @@ export default function EventSpotlight({ ticketLink }: { ticketLink: string }) {
             <div className="relative aspect-[4/5] w-full lg:aspect-auto lg:min-h-[480px]">
               <Image
                 src={siteConfig.assets.eventFlyer}
-                alt={`${featuredEvent.title} flyer`}
+                alt={`${event.title} flyer`}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover object-center"
@@ -39,25 +39,28 @@ export default function EventSpotlight({ ticketLink }: { ticketLink: string }) {
                   Featured
                 </span>
                 <h3 className="mt-4 font-display text-3xl font-bold uppercase leading-tight text-white sm:text-4xl">
-                  {featuredEvent.title}
+                  {event.title}
                 </h3>
               </div>
 
               <div className="space-y-2 text-white/80">
                 <p className="flex items-center gap-3">
                   <CalendarDays className="h-5 w-5 text-gold" aria-hidden="true" />
-                  {featuredEvent.date}
+                  {event.date}
                 </p>
                 <p className="flex items-center gap-3">
                   <MapPin className="h-5 w-5 text-gold" aria-hidden="true" />
-                  {featuredEvent.location}
+                  {event.location}
                 </p>
               </div>
 
-              <p className="text-white/70">{featuredEvent.description}</p>
+              <p className="text-white/70">{event.description}</p>
 
               <div className="pt-2">
-                <GetTicketsButton href={ticketLink} className="!px-8 !py-4 text-base" />
+                <GetTicketsButton
+                  href={event.ticketLink}
+                  className="!px-8 !py-4 text-base"
+                />
               </div>
             </div>
           </div>
