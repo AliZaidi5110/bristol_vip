@@ -36,21 +36,19 @@ Copy from `C:\Users\LENOVO\OneDrive\Desktop\Bristol Vip\DEPLOY-ENV.txt`:
 | `SESSION_SECRET` | Admin session |
 | `ADMIN_PASSWORD` | Admin password (`BristolVIP2026!`) — **use this, not the hash** |
 | `TICKET_LINK` | Fallback ticket URL |
-| `RESEND_API_KEY` | **Contact form → email** to `bristolvip1@gmail.com` |
+| `RESEND_API_KEY` | Optional — better email delivery for contact form |
 
 After adding vars → **Redeploy**.
 
 ---
 
-## Contact form email (Resend)
+## Contact form email
 
-1. Create a free account at [resend.com](https://resend.com)
-2. Create an API key → add as `RESEND_API_KEY` in Vercel
-3. Redeploy
+The contact form works **without any setup** — it forwards submissions to `bristolvip1@gmail.com` automatically.
 
-Until `RESEND_API_KEY` is set, the contact form will show an error when submitted.
+**First time only:** FormSubmit sends a one-time activation email to `bristolvip1@gmail.com`. Open it and click **Activate Form** (check spam). After that, every form submission arrives in your inbox.
 
-With the free tier, use the default sender `onboarding@resend.dev` (no extra env needed). To send from your own domain later, verify the domain in Resend and set `CONTACT_FROM_EMAIL`.
+**Optional (recommended later):** Add `RESEND_API_KEY` from [resend.com](https://resend.com) in Vercel for more reliable delivery from your own domain.
 
 ---
 
