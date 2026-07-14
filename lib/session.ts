@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { getSessionSecret } from "./admin-credentials";
 
 /**
  * Edge-safe session helpers (jose only — no Node-native deps), so they can be
@@ -9,13 +10,7 @@ export const SESSION_COOKIE = "bv_admin_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function getSecretKey(): Uint8Array {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 16) {
-    throw new Error(
-      "SESSION_SECRET env var is missing or too short (min 16 chars).",
-    );
-  }
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(getSessionSecret());
 }
 
 /** Create a signed session token marking the holder as the admin. */

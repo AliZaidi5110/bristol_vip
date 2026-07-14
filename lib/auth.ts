@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { DEFAULT_ADMIN_PASSWORD } from "./admin-credentials";
 
 // Re-export the edge-safe session helpers so server code has one import site.
 export {
@@ -26,15 +27,15 @@ export async function verifyAdminPassword(password: string): Promise<boolean> {
   }
 
   const hash = cleanEnv(process.env.ADMIN_PASSWORD_HASH);
-  if (!hash) {
-    throw new Error("Set ADMIN_PASSWORD or ADMIN_PASSWORD_HASH in env.");
+  if (hash) {
+    try {
+      return await bcrypt.compare(password, hash);
+    } catch {
+      return false;
+    }
   }
 
-  try {
-    return await bcrypt.compare(password, hash);
-  } catch {
-    return false;
-  }
+  return password === DEFAULT_ADMIN_PASSWORD;
 }
 
 /* -------------------------------------------------------------------------- */

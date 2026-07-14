@@ -5,7 +5,11 @@ import { Loader2, Lock } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { ADMIN_DASHBOARD_PATH } from "@/lib/routes";
 
-export default function LoginForm({ configured = true }: { configured?: boolean }) {
+export default function LoginForm({
+  usingDefaults = false,
+}: {
+  usingDefaults?: boolean;
+}) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -69,10 +73,9 @@ export default function LoginForm({ configured = true }: { configured?: boolean 
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
-        {!configured && !error && (
+        {usingDefaults && !error && (
           <p className="text-sm text-amber-400/90">
-            Server not configured yet — login will fail until env vars are set on
-            Vercel.
+            Default password is active — you can log in now.
           </p>
         )}
 
