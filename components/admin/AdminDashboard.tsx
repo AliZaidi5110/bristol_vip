@@ -116,24 +116,34 @@ export default function AdminDashboard({
 
         {!canSave && (
           <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
-            <p className="font-medium">Saving is not set up yet. Easiest fix (5 min):</p>
+            <p className="font-medium">Free setup — no payment needed (GitHub token):</p>
             <ol className="mt-2 list-decimal space-y-2 pl-5 text-amber-100/90">
               <li>
-                Open <strong>console.upstash.com</strong> → sign up free →{" "}
-                <strong>Create Redis database</strong>
+                Open{" "}
+                <a
+                  href="https://github.com/settings/tokens/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gold underline"
+                >
+                  github.com/settings/tokens/new
+                </a>{" "}
+                (log in to GitHub)
               </li>
               <li>
-                Copy <strong>UPSTASH_REDIS_REST_URL</strong> and{" "}
-                <strong>UPSTASH_REDIS_REST_TOKEN</strong> from the database page
+                Note: <strong>Bristol VIP admin</strong> → Expiration: <strong>No
+                expiration</strong> → tick only <strong>repo</strong> → Generate token
               </li>
               <li>
-                Vercel → project → <strong>Settings → Environment Variables</strong> →
-                add both (names exactly as above) → <strong>Redeploy</strong>
+                Copy the token → Vercel → project →{" "}
+                <strong>Settings → Environment Variables</strong> → add{" "}
+                <code className="text-amber-50">GITHUB_TOKEN</code> = paste token →
+                Redeploy
               </li>
             </ol>
             <p className="mt-3 text-xs text-amber-200/80">
-              Or: Vercel → Storage → Create KV → Connect → Redeploy. Or add{" "}
-              <code className="text-amber-50">GITHUB_TOKEN</code> with repo write access.
+              100% free. Saves to <code className="text-amber-50">data/site-event.json</code>{" "}
+              in your GitHub repo. No Upstash or credit card required.
             </p>
           </div>
         )}
