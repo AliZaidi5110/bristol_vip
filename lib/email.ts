@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { siteConfig } from "@/site.config";
 
 export type ContactPayload = {
   name: string;
@@ -86,7 +87,8 @@ export async function sendContactEmail(
     return { ok: false, error: "Email service is not configured." };
   }
 
-  const to = process.env.CONTACT_TO_EMAIL?.trim();
+  const to =
+    process.env.CONTACT_TO_EMAIL?.trim() || siteConfig.contactEmail;
   if (!to) {
     return { ok: false, error: "Email service is not configured." };
   }
