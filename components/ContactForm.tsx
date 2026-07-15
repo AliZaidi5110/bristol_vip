@@ -6,19 +6,6 @@ import { siteConfig } from "@/site.config";
 
 type Status = "idle" | "sending" | "success" | "error";
 
-function formSubmitEndpoint(): string {
-  const id =
-    process.env.NEXT_PUBLIC_FORMSUBMIT_ID?.trim() ||
-    siteConfig.contactEmail;
-  return `https://formsubmit.co/ajax/${encodeURIComponent(id)}`;
-}
-
-function isFormSubmitSuccess(json: unknown): boolean {
-  if (!json || typeof json !== "object") return false;
-  const success = (json as { success?: string | boolean }).success;
-  return success === "true" || success === true;
-}
-
 export default function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
@@ -34,51 +21,32 @@ export default function ContactForm() {
       name: String(data.get("name") ?? ""),
       email: String(data.get("email") ?? ""),
       message: String(data.get("message") ?? ""),
-      _subject: `New enquiry from ${data.get("name")} — Bristol VIP`,
-      _template: "table",
-      _captcha: "false",
+      website: String(data.get("website") ?? ""),
     };
 
     try {
-      const res = await fetch(formSubmitEndpoint(), {
+      const res = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      const json = await res.json().catch(() => ({}));
 
-      const json = await res.json().catch(() => null);
-
-      if (isFormSubmitSuccess(json)) {
-        setStatus("success");
-        setMessage("Thanks — we'll be in touch soon.");
-        form.reset();
-        return;
-      }
-
-      const remoteMessage =
-        json && typeof json === "object" && "message" in json
-          ? String((json as { message?: string }).message)
-          : "";
-
-      if (remoteMessage.toLowerCase().includes("activation")) {
+      if (!res.ok) {
         setStatus("error");
         setMessage(
-          "Almost there — open the FormSubmit email in bristolvip1@gmail.com and click Activate Form (check spam).",
+          json?.error ??
+            "We could not send your message right now. Please try again later.",
         );
         return;
       }
 
-      setStatus("error");
-      setMessage(
-        remoteMessage ||
-          "Could not send your message. Please email us at bristolvip1@gmail.com directly.",
-      );
+      setStatus("success");
+      setMessage("Thanks — we'll be in touch soon.");
+      form.reset();
     } catch {
       setStatus("error");
-      setMessage("Network error. Please try again or email bristolvip1@gmail.com.");
+      setMessage("Network error. Please try again.");
     }
   }
 
@@ -96,6 +64,14 @@ export default function ContactForm() {
         </p>
       </div>
       <form onSubmit={onSubmit} className="space-y-4">
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <input
             name="name"

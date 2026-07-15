@@ -11,14 +11,20 @@ export async function POST(request: NextRequest) {
   let name = "";
   let email = "";
   let message = "";
+  let honeypot = "";
 
   try {
     const body = await request.json();
     name = typeof body?.name === "string" ? body.name.trim() : "";
     email = typeof body?.email === "string" ? body.email.trim() : "";
     message = typeof body?.message === "string" ? body.message.trim() : "";
+    honeypot = typeof body?.website === "string" ? body.website.trim() : "";
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  if (honeypot) {
+    return NextResponse.json({ ok: true });
   }
 
   if (!name || name.length > 120) {
@@ -39,7 +45,14 @@ export async function POST(request: NextRequest) {
 
   const result = await sendContactEmail({ name, email, message });
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 503 });
+    return NextResponse.json(
+      {
+        error:
+          result.error ||
+          "We could not send your message right now. Please try again later.",
+      },
+      { status: 503 },
+    );
   }
 
   return NextResponse.json({ ok: true });

@@ -33,7 +33,7 @@ export const siteConfig = {
   website: "https://www.bristolvip.co.uk",
 
   assets: {
-    logo: "/images/logo.png",
+    logo: "/images/logo_2.png",
     heroPoster: "/images/IMG_8028.JPG.jpeg",
     heroVideo: "/videos/hero-compressed.mp4",
     eventFlyer: "/images/IMG_8018.JPG.jpeg",
