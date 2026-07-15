@@ -12,6 +12,18 @@ export type SocialLink = {
   href: string;
 };
 
+export type GalleryEvent = {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  /** CSS gradient accent used for badges and glow effects. */
+  accent: string;
+  /** First image is the large featured shot; remaining three are supporting. */
+  images: readonly [string, string, string, string];
+};
+
 export const siteConfig = {
   brandName: "Bristol VIP Events",
 
@@ -53,6 +65,69 @@ export const siteConfig = {
       "/images/IMG_8018.JPG.jpeg",
     ],
   },
+
+  galleryEvents: [
+    {
+      id: "rum-punch",
+      title: "Rum Punch Festival",
+      description:
+        "Caribbean culture, tropical atmosphere, live DJs, food and drinks.",
+      date: "Summer Season",
+      location: "Bristol, UK",
+      accent: "from-amber-500 via-orange-500 to-rose-500",
+      images: [
+        "/images/rum_punch/IMG_8018.JPG.jpeg",
+        "/images/rum_punch/IMG_8021.JPG.jpeg",
+        "/images/rum_punch/IMG_7992.JPG.jpeg",
+        "/images/rum_punch/IMG_8057.JPG.jpeg",
+      ],
+    },
+    {
+      id: "block-party",
+      title: "Block Party",
+      description:
+        "Street entertainment, music, dancing, local community celebrations.",
+      date: "Street Sessions",
+      location: "Bristol, UK",
+      accent: "from-violet-500 via-purple-500 to-fuchsia-500",
+      images: [
+        "/images/block party/img_1.jpeg",
+        "/images/block party/img_2.jpeg",
+        "/images/block party/img_3.jpeg",
+        "/images/block party/img_4.jpg",
+      ],
+    },
+    {
+      id: "st-pauls-carnival",
+      title: "St Pauls Carnival – Campbell Street",
+      description:
+        "Vibrant carnival costumes, parade performances, cultural celebration.",
+      date: "Carnival Weekend",
+      location: "Campbell Street, Bristol",
+      accent: "from-pink-500 via-rose-500 to-orange-400",
+      images: [
+        "/images/IMG_8028.JPG.jpeg",
+        "/images/IMG_8036.JPG.jpeg",
+        "/images/IMG_8049.JPG.jpeg",
+        "/images/IMG_8053.JPG.jpeg",
+      ],
+    },
+    {
+      id: "jamaican-independence",
+      title: "Jamaican Independence Celebration",
+      description:
+        "Jamaican heritage, reggae music, cultural performances, national pride.",
+      date: "Independence Day",
+      location: "Bristol, UK",
+      accent: "from-emerald-500 via-green-500 to-gold",
+      images: [
+        "/images/jamaican independence/IMG_7988.JPG.jpeg",
+        "/images/jamaican independence/IMG_0001.JPG.jpeg",
+        "/images/jamaican independence/IMG_0034.JPG.jpeg",
+        "/images/jamaican independence/IMG_0037.JPG.jpeg",
+      ],
+    },
+  ] satisfies readonly GalleryEvent[],
 
   socials: {
     instagram: "https://instagram.com/bristol_vip_events",
