@@ -79,26 +79,19 @@ function buildHtmlEmail(payload: ContactPayload): string {
 </html>`;
 }
 
-export async function sendContactEmail(
+async function sendViaResend(
   payload: ContactPayload,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+  to: string,
+): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    return { ok: false, error: "Email service is not configured." };
-  }
-
-  const to =
-    process.env.CONTACT_TO_EMAIL?.trim() || siteConfig.contactEmail;
-  if (!to) {
-    return { ok: false, error: "Email service is not configured." };
-  }
+  if (!apiKey) return false;
 
   const from =
     process.env.CONTACT_FROM_EMAIL?.trim() ||
     "Bristol VIP Website <onboarding@resend.dev>";
 
   const resend = new Resend(apiKey);
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from,
     to: [to],
     replyTo: payload.email,
@@ -108,11 +101,62 @@ export async function sendContactEmail(
   });
 
   if (error) {
-    return {
-      ok: false,
-      error: "We could not send your message right now. Please try again later.",
-    };
+    console.error("[contact] Resend error:", error.message ?? error);
+    return false;
   }
 
-  return { ok: true };
+  if (data?.id) return true;
+  return false;
+}
+
+/** Fallback when Resend cannot deliver (e.g. free tier domain limits). */
+async function sendViaFormSubmit(
+  payload: ContactPayload,
+  to: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        name: payload.name,
+        email: payload.email,
+        message: payload.message,
+        _subject: `New enquiry from ${payload.name} — Bristol VIP`,
+        _template: "table",
+        _captcha: "false",
+      }),
+    });
+
+    const json = await res.json().catch(() => null);
+    return res.ok && (json?.success === "true" || json?.success === true);
+  } catch {
+    return false;
+  }
+}
+
+export async function sendContactEmail(
+  payload: ContactPayload,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const to =
+    process.env.CONTACT_TO_EMAIL?.trim() || siteConfig.contactEmail;
+  if (!to) {
+    return { ok: false, error: "Email service is not configured." };
+  }
+
+  if (await sendViaResend(payload, to)) {
+    return { ok: true };
+  }
+
+  if (await sendViaFormSubmit(payload, to)) {
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    error: "We could not send your message right now. Please try again later.",
+  };
 }
