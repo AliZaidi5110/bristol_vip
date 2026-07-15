@@ -27,6 +27,7 @@ export default function BrandLogo({
       width={dims.width}
       height={dims.height}
       priority={priority}
+      unoptimized
       className={`${dims.className} ${className}`.trim()}
     />
   );
