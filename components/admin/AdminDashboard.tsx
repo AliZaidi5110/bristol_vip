@@ -1,27 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Check, Link2, Loader2, LogOut, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  ImagePlus,
+  Link2,
+  Loader2,
+  LogOut,
+  TriangleAlert,
+  Upload,
+} from "lucide-react";
 import { siteConfig } from "@/site.config";
 import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 import type { SiteEventSettings } from "@/lib/settings";
 
 type Toast = { type: "success" | "error"; text: string } | null;
 
+/** Fresh GitHub uploads may not be on Vercel yet — preview via raw URL. */
+function previewSrc(path: string): string {
+  if (path.includes("/uploads/")) {
+    return `https://raw.githubusercontent.com/AliZaidi5110/bristol_vip/main/public${path}`;
+  }
+  return path;
+}
+
 export default function AdminDashboard({
   initialEvent,
   storageStatus,
   canSave,
+  galleryImages,
 }: {
   initialEvent: SiteEventSettings;
   storageStatus: string;
   canSave: boolean;
+  galleryImages: string[];
 }) {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState(initialEvent);
   const [form, setForm] = useState(initialEvent);
+  const [pickerImages, setPickerImages] = useState(galleryImages);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
 
@@ -30,7 +52,8 @@ export default function AdminDashboard({
     form.title === saved.title &&
     form.description === saved.description &&
     form.date === saved.date &&
-    form.location === saved.location;
+    form.location === saved.location &&
+    form.image === saved.image;
 
   function updateField<K extends keyof SiteEventSettings>(
     key: K,
@@ -63,12 +86,51 @@ export default function AdminDashboard({
       const where = json.storage ? ` (saved to ${json.storage})` : "";
       setToast({
         type: "success",
-        text: `Event updated — Get Tickets is live now${where}. Hard-refresh the homepage if you still see the old link.`,
+        text: `Event updated — live on the site now${where}. Hard-refresh the homepage if needed.`,
       });
     } catch {
       setToast({ type: "error", text: "Network error. Please try again." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onUpload(file: File | null) {
+    if (!file) return;
+    setUploading(true);
+    setToast(null);
+
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body,
+      });
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setToast({ type: "error", text: json?.error ?? "Upload failed." });
+        return;
+      }
+
+      const path = String(json.path ?? "");
+      if (!path) {
+        setToast({ type: "error", text: "Upload succeeded but no path returned." });
+        return;
+      }
+
+      updateField("image", path);
+      setPickerImages((prev) => (prev.includes(path) ? prev : [path, ...prev]));
+      setToast({
+        type: "success",
+        text: "Photo uploaded. Click Save event to publish it on the site.",
+      });
+    } catch {
+      setToast({ type: "error", text: "Upload network error. Please try again." });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -84,7 +146,7 @@ export default function AdminDashboard({
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-10">
+    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-10">
       <header className="flex items-center justify-between">
         <div>
           <p className="font-display text-sm uppercase tracking-[0.3em] text-gold">
@@ -114,8 +176,8 @@ export default function AdminDashboard({
           Upcoming Event
         </h2>
         <p className="mt-1 text-sm text-white/50">
-          Update the featured event card and every &ldquo;Get Tickets&rdquo; button.
-          Storage: <span className="text-white/70">{storageStatus}</span>
+          Update the featured event card, photo, and every &ldquo;Get Tickets&rdquo;
+          button. Storage: <span className="text-white/70">{storageStatus}</span>
         </p>
 
         {!canSave && (
@@ -135,8 +197,9 @@ export default function AdminDashboard({
                 (log in to GitHub)
               </li>
               <li>
-                Note: <strong>Bristol VIP admin</strong> → Expiration: <strong>No
-                expiration</strong> → tick only <strong>repo</strong> → Generate token
+                Note: <strong>Bristol VIP admin</strong> → Expiration:{" "}
+                <strong>No expiration</strong> → tick only <strong>repo</strong> →
+                Generate token
               </li>
               <li>
                 Copy the token → Vercel → project →{" "}
@@ -145,10 +208,6 @@ export default function AdminDashboard({
                 Redeploy
               </li>
             </ol>
-            <p className="mt-3 text-xs text-amber-200/80">
-              100% free. Saves to <code className="text-amber-50">data/site-event.json</code>{" "}
-              in your GitHub repo. No Upstash or credit card required.
-            </p>
           </div>
         )}
 
@@ -168,6 +227,88 @@ export default function AdminDashboard({
         </div>
 
         <form onSubmit={onSave} className="mt-6 space-y-5">
+          <div>
+            <p className="block text-sm font-medium text-white/80">
+              Upcoming event photo
+            </p>
+            <p className="mt-1 text-xs text-white/45">
+              This is the image on the left of the event details on the homepage.
+              Pick from your gallery or upload a new photo.
+            </p>
+
+            <div className="mt-3 relative aspect-[4/5] max-w-xs overflow-hidden rounded-xl border border-ink-line bg-ink">
+              <Image
+                src={previewSrc(form.image || siteConfig.assets.eventFlyer)}
+                alt="Upcoming event preview"
+                fill
+                sizes="320px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => onUpload(e.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                disabled={uploading || !canSave}
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-gold transition hover:bg-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploading ? "Uploading…" : "Upload photo"}
+              </button>
+              <span className="inline-flex items-center gap-1.5 text-xs text-white/40">
+                <ImagePlus className="h-3.5 w-3.5" />
+                JPG / PNG / WebP · under 8 MB
+              </span>
+            </div>
+
+            <div className="mt-4 grid max-h-64 grid-cols-3 gap-2 overflow-y-auto rounded-xl border border-ink-line bg-ink p-2 sm:grid-cols-4">
+              {pickerImages.map((src) => {
+                const selected = form.image === src;
+                return (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => updateField("image", src)}
+                    className={`relative aspect-square overflow-hidden rounded-lg border transition ${
+                      selected
+                        ? "border-gold ring-2 ring-gold/50"
+                        : "border-white/10 hover:border-white/40"
+                    }`}
+                    aria-label={`Select ${src}`}
+                    aria-pressed={selected}
+                  >
+                    <Image
+                      src={previewSrc(src)}
+                      alt=""
+                      fill
+                      sizes="120px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                    {selected && (
+                      <span className="absolute inset-x-0 bottom-0 bg-gold/90 py-0.5 text-center text-[10px] font-bold uppercase tracking-wider text-ink">
+                        Selected
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-white/80">
               Event title

@@ -17,6 +17,8 @@ export type SiteEventSettings = {
   description: string;
   date: string;
   location: string;
+  /** Left-side upcoming event photo (public path under /images/...). */
+  image: string;
 };
 
 export type StorageBackend = "kv" | "github" | "supabase";
@@ -29,6 +31,7 @@ function defaults(): SiteEventSettings {
     description: featuredEvent.description,
     date: featuredEvent.date,
     location: featuredEvent.location,
+    image: siteConfig.assets.eventFlyer,
   };
 }
 
@@ -55,12 +58,17 @@ function hasSupabase(): boolean {
 function normalizeEvent(raw: Partial<SiteEventSettings> | null): SiteEventSettings | null {
   if (!raw?.ticketLink) return null;
   const base = defaults();
+  const image =
+    typeof raw.image === "string" && raw.image.trim().startsWith("/images/")
+      ? raw.image.trim()
+      : base.image;
   return {
     ticketLink: raw.ticketLink.trim(),
     title: raw.title?.trim() || base.title,
     description: raw.description?.trim() || base.description,
     date: raw.date?.trim() || base.date,
     location: raw.location?.trim() || base.location,
+    image,
   };
 }
 

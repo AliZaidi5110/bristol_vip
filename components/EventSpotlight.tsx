@@ -25,11 +25,12 @@ export default function EventSpotlight({ event }: { event: SiteEventSettings }) 
           <div className="grid overflow-hidden rounded-2xl border border-ink-line bg-ink-card shadow-2xl lg:grid-cols-2">
             <div className="relative aspect-[4/5] w-full lg:aspect-auto lg:min-h-[480px]">
               <Image
-                src={siteConfig.assets.eventFlyer}
+                src={event.image || siteConfig.assets.eventFlyer}
                 alt={`${event.title} flyer`}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover object-center"
+                priority
               />
             </div>
 

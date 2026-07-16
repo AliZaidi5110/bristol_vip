@@ -33,6 +33,10 @@ function parseEvent(json: unknown): SiteEventSettings | null {
     description: typeof raw.description === "string" ? raw.description : "",
     date: typeof raw.date === "string" ? raw.date : "",
     location: typeof raw.location === "string" ? raw.location : "",
+    image:
+      typeof raw.image === "string" && raw.image.startsWith("/images/")
+        ? raw.image.trim()
+        : "",
   };
 }
 

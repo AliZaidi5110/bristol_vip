@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifySessionToken, SESSION_COOKIE } from "@/lib/auth";
 import { getGitHubSetupHint } from "@/lib/github-event-store";
+import { isLocalImagePath } from "@/lib/gallery-images";
 import {
   canSaveEvents,
   getSiteEvent,
@@ -8,6 +9,7 @@ import {
   setSiteEvent,
   type SiteEventSettings,
 } from "@/lib/settings";
+import { siteConfig } from "@/site.config";
 
 export const runtime = "nodejs";
 
@@ -35,6 +37,10 @@ function parseEventBody(body: unknown): SiteEventSettings | null {
     typeof raw.description === "string" ? raw.description.trim() : "";
   const date = typeof raw.date === "string" ? raw.date.trim() : "";
   const location = typeof raw.location === "string" ? raw.location.trim() : "";
+  const imageRaw = typeof raw.image === "string" ? raw.image.trim() : "";
+  const image = isLocalImagePath(imageRaw)
+    ? imageRaw
+    : siteConfig.assets.eventFlyer;
 
   if (!isValidHttpUrl(ticketLink)) return null;
   if (!title || title.length > 200) return null;
@@ -42,7 +48,7 @@ function parseEventBody(body: unknown): SiteEventSettings | null {
   if (!date || date.length > 120) return null;
   if (!location || location.length > 200) return null;
 
-  return { ticketLink, title, description, date, location };
+  return { ticketLink, title, description, date, location, image };
 }
 
 export async function GET(request: NextRequest) {
