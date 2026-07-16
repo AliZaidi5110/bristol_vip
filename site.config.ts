@@ -121,10 +121,10 @@ export const siteConfig = {
       location: "Bristol, UK",
       accent: "from-emerald-500 via-green-500 to-gold",
       images: [
+        "/images/jamaican independence/independence-crowd.jpg",
         "/images/jamaican independence/IMG_7988.JPG.jpeg",
         "/images/jamaican independence/IMG_0001.JPG.jpeg",
         "/images/jamaican independence/IMG_0034.JPG.jpeg",
-        "/images/jamaican independence/IMG_0037.JPG.jpeg",
       ],
     },
   ] satisfies readonly GalleryEvent[],
