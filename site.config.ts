@@ -48,7 +48,7 @@ export const siteConfig = {
     logo: "/images/logo_2.png",
     heroPoster: "/images/IMG_8028.JPG.jpeg",
     heroVideo: "/videos/hero-web.mp4",
-    eventFlyer: "/images/IMG_8018.JPG.jpeg",
+    eventFlyer: "/images/jamaican independence/independence-crowd.jpg",
     aboutImage: "/images/IMG_8036.JPG.jpeg",
     gallery: [
       "/images/IMG_7988.JPG.jpeg",
