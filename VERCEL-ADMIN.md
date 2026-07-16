@@ -42,13 +42,48 @@ After adding vars → **Redeploy**.
 
 ---
 
-## Contact form email
+## Contact form email — full Resend setup
 
-The contact form works **without any setup** — it forwards submissions to `bristolvip1@gmail.com` automatically.
+The live form posts to `/api/contact`. Delivery uses **Resend first**, then **FormSubmit** as fallback.
 
-**First time only:** FormSubmit sends a one-time activation email to `bristolvip1@gmail.com`. Open it and click **Activate Form** (check spam). After that, every form submission arrives in your inbox.
+### Option A — Resend (recommended)
 
-**Optional (recommended later):** Add `RESEND_API_KEY` from [resend.com](https://resend.com) in Vercel for more reliable delivery from your own domain.
+1. Create a free account at [resend.com](https://resend.com) using **`bristolvip1@gmail.com`**  
+   (sandbox mode can only deliver to the Resend account email)
+2. Go to **API Keys → Create API Key** → copy `re_...`
+3. In Vercel → Project → **Settings → Environment Variables**, add for Production + Preview:
+
+| Name | Value |
+|---|---|
+| `RESEND_API_KEY` | `re_...` from Resend |
+| `CONTACT_TO_EMAIL` | `bristolvip1@gmail.com` |
+| `CONTACT_FROM_EMAIL` | `Bristol VIP Website <onboarding@resend.dev>` |
+| `NEXT_PUBLIC_SITE_URL` | `https://bristol-vip-pi.vercel.app` |
+
+4. **Redeploy** the project (Deployments → … → Redeploy)
+5. Test the contact form — email should arrive at `bristolvip1@gmail.com`
+6. Check status anytime: `GET https://bristol-vip-pi.vercel.app/api/contact`
+
+**Upgrade later (send to any address / custom from):**  
+[resend.com/domains](https://resend.com/domains) → add `bristolvip.co.uk` → add DNS records → verify → set  
+`CONTACT_FROM_EMAIL=Bristol VIP <hello@bristolvip.co.uk>`
+
+### Option B — FormSubmit fallback (no Resend)
+
+If Resend is missing or blocked, the API falls back to FormSubmit.
+
+1. Submit the contact form once (or wait for the activation email)
+2. Open **`bristolvip1@gmail.com`** (check Spam)
+3. Click **Activate Form** in the FormSubmit email
+4. Submit again — messages will arrive
+
+### Common failures
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Form shows "Email is not configured" | `RESEND_API_KEY` missing and FormSubmit not activated | Add Resend key **or** activate FormSubmit |
+| Resend 403 / testing emails only | Resend account email ≠ `CONTACT_TO_EMAIL` | Sign up Resend with `bristolvip1@gmail.com`, or verify a domain |
+| FormSubmit activation email | First-time inbox approval | Click Activate Form once |
 
 ---
 

@@ -1,10 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { sendContactEmail } from "@/lib/email";
+import { getEmailConfigStatus, sendContactEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
 function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+/** Safe config probe — no secrets. Useful for diagnosing production email setup. */
+export async function GET() {
+  const status = getEmailConfigStatus();
+  return NextResponse.json({
+    ok: true,
+    email: {
+      resendConfigured: status.resendConfigured,
+      toEmail: status.toEmail,
+      fromEmail: status.fromEmail,
+      usingResendSandbox: status.usingResendSandbox,
+      siteOrigin: status.siteOrigin,
+      readyHint: status.resendConfigured
+        ? status.usingResendSandbox
+          ? "Resend sandbox mode: can only deliver to the email used for your Resend account until a domain is verified."
+          : "Resend looks configured with a custom from address."
+        : "RESEND_API_KEY missing — FormSubmit fallback will be used (needs one-time inbox activation).",
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {

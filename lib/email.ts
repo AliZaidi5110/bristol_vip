@@ -7,6 +7,14 @@ export type ContactPayload = {
   message: string;
 };
 
+export type EmailConfigStatus = {
+  resendConfigured: boolean;
+  toEmail: string;
+  fromEmail: string;
+  usingResendSandbox: boolean;
+  siteOrigin: string;
+};
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -14,6 +22,50 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function getToEmail(): string {
+  return process.env.CONTACT_TO_EMAIL?.trim() || siteConfig.contactEmail;
+}
+
+function getFromEmail(): string {
+  return (
+    process.env.CONTACT_FROM_EMAIL?.trim() ||
+    "Bristol VIP Website <onboarding@resend.dev>"
+  );
+}
+
+function getSiteOrigin(): string {
+  const configured =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.SITE_URL?.trim() ||
+    siteConfig.website;
+
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // fall through
+    }
+  }
+
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    return vercel.startsWith("http") ? vercel : `https://${vercel}`;
+  }
+
+  return "https://bristol-vip-pi.vercel.app";
+}
+
+export function getEmailConfigStatus(): EmailConfigStatus {
+  const fromEmail = getFromEmail();
+  return {
+    resendConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
+    toEmail: getToEmail(),
+    fromEmail,
+    usingResendSandbox: fromEmail.includes("resend.dev"),
+    siteOrigin: getSiteOrigin(),
+  };
 }
 
 function buildPlainText(payload: ContactPayload): string {
@@ -79,84 +131,171 @@ function buildHtmlEmail(payload: ContactPayload): string {
 </html>`;
 }
 
+type ProviderResult =
+  | { ok: true; provider: "resend" | "formsubmit" }
+  | { ok: false; provider: "resend" | "formsubmit"; error: string };
+
 async function sendViaResend(
   payload: ContactPayload,
   to: string,
-): Promise<boolean> {
+): Promise<ProviderResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) return false;
-
-  const from =
-    process.env.CONTACT_FROM_EMAIL?.trim() ||
-    "Bristol VIP Website <onboarding@resend.dev>";
-
-  const resend = new Resend(apiKey);
-  const { data, error } = await resend.emails.send({
-    from,
-    to: [to],
-    replyTo: payload.email,
-    subject: `New enquiry from ${payload.name} — Bristol VIP`,
-    text: buildPlainText(payload),
-    html: buildHtmlEmail(payload),
-  });
-
-  if (error) {
-    console.error("[contact] Resend error:", error.message ?? error);
-    return false;
+  if (!apiKey) {
+    return { ok: false, provider: "resend", error: "RESEND_API_KEY is not set." };
   }
 
-  if (data?.id) return true;
-  return false;
+  const from = getFromEmail();
+  const resend = new Resend(apiKey);
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from,
+      to: [to],
+      replyTo: payload.email,
+      subject: `New enquiry from ${payload.name} — Bristol VIP`,
+      text: buildPlainText(payload),
+      html: buildHtmlEmail(payload),
+    });
+
+    if (error) {
+      const message = error.message ?? String(error);
+      console.error("[contact] Resend error:", message);
+      return { ok: false, provider: "resend", error: message };
+    }
+
+    if (data?.id) {
+      console.info("[contact] Sent via Resend:", data.id);
+      return { ok: true, provider: "resend" };
+    }
+
+    return {
+      ok: false,
+      provider: "resend",
+      error: "Resend returned no email id.",
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[contact] Resend exception:", message);
+    return { ok: false, provider: "resend", error: message };
+  }
 }
 
-/** Fallback when Resend cannot deliver (e.g. free tier domain limits). */
+/**
+ * FormSubmit fallback — needs Origin/Referer (server-only calls are rejected),
+ * and a one-time "Activate Form" click in the inbox for CONTACT_TO_EMAIL.
+ */
 async function sendViaFormSubmit(
   payload: ContactPayload,
   to: string,
-): Promise<boolean> {
-  try {
-    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        name: payload.name,
-        email: payload.email,
-        message: payload.message,
-        _subject: `New enquiry from ${payload.name} — Bristol VIP`,
-        _template: "table",
-        _captcha: "false",
-      }),
-    });
+): Promise<ProviderResult> {
+  const origin = getSiteOrigin();
 
-    const json = await res.json().catch(() => null);
-    return res.ok && (json?.success === "true" || json?.success === true);
-  } catch {
-    return false;
+  try {
+    const res = await fetch(
+      `https://formsubmit.co/ajax/${encodeURIComponent(to)}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Origin: origin,
+          Referer: `${origin}/`,
+        },
+        body: JSON.stringify({
+          name: payload.name,
+          email: payload.email,
+          message: payload.message,
+          _replyto: payload.email,
+          _subject: `New enquiry from ${payload.name} — Bristol VIP`,
+          _template: "table",
+          _captcha: "false",
+        }),
+      },
+    );
+
+    const json = (await res.json().catch(() => null)) as {
+      success?: boolean | string;
+      message?: string;
+    } | null;
+
+    const success =
+      res.ok && (json?.success === "true" || json?.success === true);
+
+    if (success) {
+      console.info("[contact] Sent via FormSubmit");
+      return { ok: true, provider: "formsubmit" };
+    }
+
+    const message =
+      json?.message ||
+      `FormSubmit failed with status ${res.status}.`;
+    console.error("[contact] FormSubmit error:", message);
+
+    if (/activation/i.test(message)) {
+      return {
+        ok: false,
+        provider: "formsubmit",
+        error:
+          `FormSubmit needs activation — check ${to} for an "Activate Form" email (also spam).`,
+      };
+    }
+
+    return { ok: false, provider: "formsubmit", error: message };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[contact] FormSubmit exception:", message);
+    return { ok: false, provider: "formsubmit", error: message };
   }
+}
+
+function userFacingError(results: ProviderResult[]): string {
+  const failures = results.filter(
+    (r): r is Extract<ProviderResult, { ok: false }> => !r.ok,
+  );
+
+  const formSubmit = failures.find((r) => r.provider === "formsubmit");
+  if (formSubmit && /activation/i.test(formSubmit.error)) {
+    return formSubmit.error;
+  }
+
+  const resend = failures.find((r) => r.provider === "resend");
+  if (
+    resend &&
+    /only send testing emails|verify a domain|not authorized/i.test(resend.error)
+  ) {
+    return (
+      "Email is almost set up. Resend can only send to your Resend account email " +
+      "until you verify a domain at resend.com/domains — or activate FormSubmit in your inbox."
+    );
+  }
+
+  if (resend && /RESEND_API_KEY is not set/i.test(resend.error)) {
+    return (
+      "Email is not configured yet. Add RESEND_API_KEY (and CONTACT_TO_EMAIL) " +
+      "in Vercel environment variables, then redeploy."
+    );
+  }
+
+  return "We could not send your message right now. Please try again later.";
 }
 
 export async function sendContactEmail(
   payload: ContactPayload,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const to =
-    process.env.CONTACT_TO_EMAIL?.trim() || siteConfig.contactEmail;
+  const to = getToEmail();
   if (!to) {
     return { ok: false, error: "Email service is not configured." };
   }
 
-  if (await sendViaResend(payload, to)) {
-    return { ok: true };
-  }
+  const results: ProviderResult[] = [];
 
-  if (await sendViaFormSubmit(payload, to)) {
-    return { ok: true };
-  }
+  const resendResult = await sendViaResend(payload, to);
+  results.push(resendResult);
+  if (resendResult.ok) return { ok: true };
 
-  return {
-    ok: false,
-    error: "We could not send your message right now. Please try again later.",
-  };
+  const formSubmitResult = await sendViaFormSubmit(payload, to);
+  results.push(formSubmitResult);
+  if (formSubmitResult.ok) return { ok: true };
+
+  return { ok: false, error: userFacingError(results) };
 }
