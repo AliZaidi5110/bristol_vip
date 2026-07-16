@@ -103,7 +103,8 @@ export default function GalleryLightbox({
                     src={images[current]}
                     alt={`${eventTitle} photo ${current + 1}`}
                     fill
-                    sizes="(max-width: 1024px) 100vw, 80vw"
+                    sizes="(max-width: 1024px) 100vw, 900px"
+                    quality={75}
                     className="object-cover"
                     priority
                   />

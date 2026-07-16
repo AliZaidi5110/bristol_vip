@@ -34,6 +34,8 @@ DEPLOY-ENV.txt
 # Large source video only (GitHub 100 MB limit)
 /public/videos/IMG_8136.MP4
 /public/videos/IMG_8136*.MP4
+# Optional local heavy encodes — site uses hero-web.mp4
+/public/videos/hero-compressed.mp4
 
 # typescript
 *.tsbuildinfo

@@ -47,7 +47,7 @@ export const siteConfig = {
   assets: {
     logo: "/images/logo_2.png",
     heroPoster: "/images/IMG_8028.JPG.jpeg",
-    heroVideo: "/videos/hero-compressed.mp4",
+    heroVideo: "/videos/hero-web.mp4",
     eventFlyer: "/images/IMG_8018.JPG.jpeg",
     aboutImage: "/images/IMG_8036.JPG.jpeg",
     gallery: [
@@ -106,10 +106,10 @@ export const siteConfig = {
       location: "Campbell Street, Bristol",
       accent: "from-pink-500 via-rose-500 to-orange-400",
       images: [
-        "/images/IMG_8028.JPG.jpeg",
-        "/images/IMG_8036.JPG.jpeg",
-        "/images/IMG_8049.JPG.jpeg",
-        "/images/IMG_8053.JPG.jpeg",
+        "/images/st_pauls_carnival/dsc00444.jpg",
+        "/images/st_pauls_carnival/dsc00192.jpg",
+        "/images/st_pauls_carnival/dsc00484.jpg",
+        "/images/st_pauls_carnival/dsc00186.jpg",
       ],
     },
     {
