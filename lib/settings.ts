@@ -98,17 +98,24 @@ async function getTicketFromSupabase(): Promise<string | null> {
   }
 }
 
-/** Full event settings for the upcoming event card + ticket buttons. */
+/**
+ * Full event settings for the upcoming event card + ticket buttons.
+ * Read order matches write order so admin saves appear on the live site.
+ */
 export async function getSiteEvent(): Promise<SiteEventSettings> {
+  // 1) Vercel KV (if connected)
   const fromKv = await getEventFromKv();
   if (fromKv) return fromKv;
 
+  // 2) GitHub admin store (API / local file / raw) — primary free path
   const fromGitHub = normalizeEvent(await getEventFromGitHub());
   if (fromGitHub) return fromGitHub;
 
+  // 3) Supabase (ticket link only)
   const fromDb = await getTicketFromSupabase();
   if (fromDb) return { ...defaults(), ticketLink: fromDb };
 
+  // 4) Env fallback — only when nothing was saved via admin
   const fromEnv = envTicketLink();
   if (fromEnv) return { ...defaults(), ticketLink: fromEnv };
 

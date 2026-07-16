@@ -60,7 +60,11 @@ export default function AdminDashboard({
       const event = json.event ?? form;
       setSaved(event);
       setForm(event);
-      setToast({ type: "success", text: "Event updated — it's live on the site now." });
+      const where = json.storage ? ` (saved to ${json.storage})` : "";
+      setToast({
+        type: "success",
+        text: `Event updated — Get Tickets is live now${where}. Hard-refresh the homepage if you still see the old link.`,
+      });
     } catch {
       setToast({ type: "error", text: "Network error. Please try again." });
     } finally {

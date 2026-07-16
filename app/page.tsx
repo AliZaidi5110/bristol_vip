@@ -8,6 +8,7 @@ import { getSiteEvent } from "@/lib/settings";
 
 // Always render fresh so an admin's ticket-link change goes live immediately.
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const event = await getSiteEvent();
