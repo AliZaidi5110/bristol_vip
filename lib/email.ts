@@ -1,10 +1,17 @@
+import "server-only";
+
 import { Resend } from "resend";
-import { siteConfig } from "@/site.config";
 
 export type ContactPayload = {
   name: string;
   email: string;
   message: string;
+
+  /**
+   * Optional unique ID created when the form submission begins.
+   * Reusing the same ID on retries prevents duplicate emails.
+   */
+  submissionId?: string;
 };
 
 export type EmailConfigStatus = {
@@ -15,6 +22,180 @@ export type EmailConfigStatus = {
   siteOrigin: string;
 };
 
+type NormalizedContactPayload = {
+  name: string;
+  email: string;
+  message: string;
+  submissionId?: string;
+};
+
+type ValidationResult =
+  | {
+      ok: true;
+      payload: NormalizedContactPayload;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+type SendContactEmailResult =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_MESSAGE_LENGTH = 5_000;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+let resendClient: Resend | null = null;
+
+function getEnv(name: string): string {
+  return process.env[name]?.trim() ?? "";
+}
+
+function getResendClient(apiKey: string): Resend {
+  if (!resendClient) {
+    resendClient = new Resend(apiKey);
+  }
+
+  return resendClient;
+}
+
+function getSiteOrigin(): string {
+  const configured =
+    getEnv("NEXT_PUBLIC_SITE_URL") || getEnv("SITE_URL");
+
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      console.error(
+        "[contact] NEXT_PUBLIC_SITE_URL or SITE_URL is invalid.",
+      );
+    }
+  }
+
+  const vercelUrl = getEnv("VERCEL_URL");
+
+  if (vercelUrl) {
+    try {
+      return new URL(
+        vercelUrl.startsWith("http")
+          ? vercelUrl
+          : `https://${vercelUrl}`,
+      ).origin;
+    } catch {
+      console.error("[contact] VERCEL_URL is invalid.");
+    }
+  }
+
+  return "https://www.bristolvip.co.uk";
+}
+
+export function getEmailConfigStatus(): EmailConfigStatus {
+  const apiKey = getEnv("RESEND_API_KEY");
+  const toEmail = getEnv("CONTACT_TO_EMAIL");
+  const fromEmail = getEnv("CONTACT_FROM_EMAIL");
+
+  return {
+    resendConfigured: Boolean(apiKey),
+    toEmail,
+    fromEmail,
+    usingResendSandbox: fromEmail.includes("resend.dev"),
+    siteOrigin: getSiteOrigin(),
+  };
+}
+
+function normalizeAndValidatePayload(
+  payload: ContactPayload,
+): ValidationResult {
+  if (!payload || typeof payload !== "object") {
+    return {
+      ok: false,
+      error: "Invalid contact form submission.",
+    };
+  }
+
+  const name =
+    typeof payload.name === "string"
+      ? payload.name.replace(/[\r\n\t]+/g, " ").trim()
+      : "";
+
+  const email =
+    typeof payload.email === "string"
+      ? payload.email.trim().toLowerCase()
+      : "";
+
+  const message =
+    typeof payload.message === "string"
+      ? payload.message.replace(/\u0000/g, "").trim()
+      : "";
+
+  const submissionId =
+    typeof payload.submissionId === "string"
+      ? payload.submissionId
+          .trim()
+          .replace(/[^a-zA-Z0-9_-]/g, "")
+          .slice(0, 200)
+      : undefined;
+
+  if (!name) {
+    return {
+      ok: false,
+      error: "Please enter your name.",
+    };
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    return {
+      ok: false,
+      error: `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
+    };
+  }
+
+  if (
+    !email ||
+    email.length > MAX_EMAIL_LENGTH ||
+    !EMAIL_PATTERN.test(email)
+  ) {
+    return {
+      ok: false,
+      error: "Please enter a valid email address.",
+    };
+  }
+
+  if (!message) {
+    return {
+      ok: false,
+      error: "Please enter your event details.",
+    };
+  }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return {
+      ok: false,
+      error: `Event details must be ${MAX_MESSAGE_LENGTH} characters or fewer.`,
+    };
+  }
+
+  return {
+    ok: true,
+    payload: {
+      name,
+      email,
+      message,
+      submissionId: submissionId || undefined,
+    },
+  };
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -24,103 +205,206 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function getToEmail(): string {
-  return process.env.CONTACT_TO_EMAIL?.trim() || siteConfig.contactEmail;
-}
-
-function getFromEmail(): string {
-  return (
-    process.env.CONTACT_FROM_EMAIL?.trim() ||
-    "Bristol VIP Website <onboarding@resend.dev>"
-  );
-}
-
-function getSiteOrigin(): string {
-  const configured =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.SITE_URL?.trim() ||
-    siteConfig.website;
-
-  if (configured) {
-    try {
-      return new URL(configured).origin;
-    } catch {
-      // fall through
-    }
-  }
-
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) {
-    return vercel.startsWith("http") ? vercel : `https://${vercel}`;
-  }
-
-  return "https://bristol-vip-pi.vercel.app";
-}
-
-export function getEmailConfigStatus(): EmailConfigStatus {
-  const fromEmail = getFromEmail();
-  return {
-    resendConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
-    toEmail: getToEmail(),
-    fromEmail,
-    usingResendSandbox: fromEmail.includes("resend.dev"),
-    siteOrigin: getSiteOrigin(),
-  };
-}
-
-function buildPlainText(payload: ContactPayload): string {
+function buildPlainText(
+  payload: NormalizedContactPayload,
+): string {
   return [
     "New contact form submission — Bristol VIP Events",
     "",
     `Name: ${payload.name}`,
     `Email: ${payload.email}`,
     "",
-    "Message:",
+    "Event details:",
     payload.message,
   ].join("\n");
 }
 
-function buildHtmlEmail(payload: ContactPayload): string {
+function buildHtmlEmail(
+  payload: NormalizedContactPayload,
+): string {
   const name = escapeHtml(payload.name);
   const email = escapeHtml(payload.email);
-  const message = escapeHtml(payload.message).replace(/\n/g, "<br />");
+  const message = escapeHtml(payload.message).replace(
+    /\r?\n/g,
+    "<br />",
+  );
 
-  return `<!DOCTYPE html>
+  return `<!doctype html>
 <html lang="en">
-<head><meta charset="utf-8" /></head>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:Arial,Helvetica,sans-serif;color:#f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:24px 0;">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+  <title>New Bristol VIP enquiry</title>
+</head>
+
+<body
+  style="
+    margin:0;
+    padding:0;
+    background:#0a0a0a;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#f5f5f5;
+  "
+>
+  <table
+    role="presentation"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    style="background:#0a0a0a;padding:24px 12px;"
+  >
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#141414;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;">
+        <table
+          role="presentation"
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          style="
+            width:100%;
+            max-width:600px;
+            background:#141414;
+            border:1px solid #2a2a2a;
+            border-radius:12px;
+            overflow:hidden;
+          "
+        >
           <tr>
-            <td style="padding:24px 28px;background:#1a1a1a;border-bottom:1px solid #c9a227;">
-              <h1 style="margin:0;font-size:20px;color:#c9a227;letter-spacing:0.05em;text-transform:uppercase;">New Enquiry</h1>
-              <p style="margin:8px 0 0;font-size:14px;color:#aaaaaa;">Bristol VIP Events website contact form</p>
+            <td
+              style="
+                padding:24px 28px;
+                background:#1a1a1a;
+                border-bottom:1px solid #c9a227;
+              "
+            >
+              <h1
+                style="
+                  margin:0;
+                  font-size:20px;
+                  color:#c9a227;
+                  letter-spacing:0.05em;
+                  text-transform:uppercase;
+                "
+              >
+                New Enquiry
+              </h1>
+
+              <p
+                style="
+                  margin:8px 0 0;
+                  font-size:14px;
+                  color:#aaaaaa;
+                "
+              >
+                Bristol VIP Events website contact form
+              </p>
             </td>
           </tr>
+
           <tr>
             <td style="padding:28px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding-bottom:16px;">
-                    <p style="margin:0 0 4px;font-size:12px;color:#888888;text-transform:uppercase;letter-spacing:0.08em;">Name</p>
-                    <p style="margin:0;font-size:16px;color:#ffffff;">${name}</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-bottom:16px;">
-                    <p style="margin:0 0 4px;font-size:12px;color:#888888;text-transform:uppercase;letter-spacing:0.08em;">Email</p>
-                    <p style="margin:0;font-size:16px;"><a href="mailto:${email}" style="color:#c9a227;text-decoration:none;">${email}</a></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <p style="margin:0 0 4px;font-size:12px;color:#888888;text-transform:uppercase;letter-spacing:0.08em;">Message</p>
-                    <p style="margin:0;font-size:15px;line-height:1.6;color:#e8e8e8;">${message}</p>
-                  </td>
-                </tr>
-              </table>
+              <p
+                style="
+                  margin:0 0 4px;
+                  font-size:12px;
+                  color:#888888;
+                  text-transform:uppercase;
+                  letter-spacing:0.08em;
+                "
+              >
+                Name
+              </p>
+
+              <p
+                style="
+                  margin:0 0 20px;
+                  font-size:16px;
+                  color:#ffffff;
+                "
+              >
+                ${name}
+              </p>
+
+              <p
+                style="
+                  margin:0 0 4px;
+                  font-size:12px;
+                  color:#888888;
+                  text-transform:uppercase;
+                  letter-spacing:0.08em;
+                "
+              >
+                Email
+              </p>
+
+              <p
+                style="
+                  margin:0 0 20px;
+                  font-size:16px;
+                "
+              >
+                <a
+                  href="mailto:${email}"
+                  style="
+                    color:#c9a227;
+                    text-decoration:none;
+                  "
+                >
+                  ${email}
+                </a>
+              </p>
+
+              <p
+                style="
+                  margin:0 0 4px;
+                  font-size:12px;
+                  color:#888888;
+                  text-transform:uppercase;
+                  letter-spacing:0.08em;
+                "
+              >
+                Event details
+              </p>
+
+              <div
+                style="
+                  margin:0;
+                  padding:16px;
+                  background:#101010;
+                  border:1px solid #292929;
+                  border-radius:8px;
+                  font-size:15px;
+                  line-height:1.65;
+                  color:#e8e8e8;
+                  overflow-wrap:anywhere;
+                "
+              >
+                ${message}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td
+              style="
+                padding:18px 28px;
+                background:#101010;
+                border-top:1px solid #252525;
+              "
+            >
+              <p
+                style="
+                  margin:0;
+                  font-size:12px;
+                  line-height:1.5;
+                  color:#777777;
+                "
+              >
+                Reply directly to this email to contact the customer.
+              </p>
             </td>
           </tr>
         </table>
@@ -131,171 +415,111 @@ function buildHtmlEmail(payload: ContactPayload): string {
 </html>`;
 }
 
-type ProviderResult =
-  | { ok: true; provider: "resend" | "formsubmit" }
-  | { ok: false; provider: "resend" | "formsubmit"; error: string };
+export async function sendContactEmail(
+  incomingPayload: ContactPayload,
+): Promise<SendContactEmailResult> {
+  const validation =
+    normalizeAndValidatePayload(incomingPayload);
 
-async function sendViaResend(
-  payload: ContactPayload,
-  to: string,
-): Promise<ProviderResult> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    return { ok: false, provider: "resend", error: "RESEND_API_KEY is not set." };
+  if (!validation.ok) {
+    return {
+      ok: false,
+      error: validation.error,
+    };
   }
 
-  const from = getFromEmail();
-  const resend = new Resend(apiKey);
+  const apiKey = getEnv("RESEND_API_KEY");
+  const toEmail = getEnv("CONTACT_TO_EMAIL");
+  const fromEmail = getEnv("CONTACT_FROM_EMAIL");
 
-  try {
-    const { data, error } = await resend.emails.send({
-      from,
-      to: [to],
-      replyTo: payload.email,
-      subject: `New enquiry from ${payload.name} — Bristol VIP`,
-      text: buildPlainText(payload),
-      html: buildHtmlEmail(payload),
-    });
+  const missingVariables = [
+    !apiKey && "RESEND_API_KEY",
+    !toEmail && "CONTACT_TO_EMAIL",
+    !fromEmail && "CONTACT_FROM_EMAIL",
+  ].filter(Boolean);
 
-    if (error) {
-      const message = error.message ?? String(error);
-      console.error("[contact] Resend error:", message);
-      return { ok: false, provider: "resend", error: message };
-    }
-
-    if (data?.id) {
-      console.info("[contact] Sent via Resend:", data.id);
-      return { ok: true, provider: "resend" };
-    }
+  if (missingVariables.length > 0) {
+    console.error(
+      `[contact] Missing environment variables: ${missingVariables.join(
+        ", ",
+      )}`,
+    );
 
     return {
       ok: false,
-      provider: "resend",
-      error: "Resend returned no email id.",
+      error:
+        "The email service is temporarily unavailable. Please try again later.",
     };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[contact] Resend exception:", message);
-    return { ok: false, provider: "resend", error: message };
   }
-}
 
-/**
- * FormSubmit fallback — needs Origin/Referer (server-only calls are rejected),
- * and a one-time "Activate Form" click in the inbox for CONTACT_TO_EMAIL.
- */
-async function sendViaFormSubmit(
-  payload: ContactPayload,
-  to: string,
-): Promise<ProviderResult> {
-  const origin = getSiteOrigin();
+  const payload = validation.payload;
+  const resend = getResendClient(apiKey);
+
+  const emailData = {
+    from: fromEmail,
+    to: [toEmail],
+    replyTo: payload.email,
+    subject: `New enquiry from ${payload.name} — Bristol VIP`,
+    text: buildPlainText(payload),
+    html: buildHtmlEmail(payload),
+    tags: [
+      {
+        name: "source",
+        value: "contact-form",
+      },
+    ],
+  };
 
   try {
-    const res = await fetch(
-      `https://formsubmit.co/ajax/${encodeURIComponent(to)}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Origin: origin,
-          Referer: `${origin}/`,
-        },
-        body: JSON.stringify({
-          name: payload.name,
-          email: payload.email,
-          message: payload.message,
-          _replyto: payload.email,
-          _subject: `New enquiry from ${payload.name} — Bristol VIP`,
-          _template: "table",
-          _captcha: "false",
-        }),
-      },
-    );
+    const sendOptions = payload.submissionId
+      ? {
+          idempotencyKey: `contact-form/${payload.submissionId}`,
+        }
+      : undefined;
 
-    const json = (await res.json().catch(() => null)) as {
-      success?: boolean | string;
-      message?: string;
-    } | null;
+    const { data, error } = sendOptions
+      ? await resend.emails.send(emailData, sendOptions)
+      : await resend.emails.send(emailData);
 
-    const success =
-      res.ok && (json?.success === "true" || json?.success === true);
+    if (error) {
+      console.error("[contact] Resend error:", error.message);
 
-    if (success) {
-      console.info("[contact] Sent via FormSubmit");
-      return { ok: true, provider: "formsubmit" };
-    }
-
-    const message =
-      json?.message ||
-      `FormSubmit failed with status ${res.status}.`;
-    console.error("[contact] FormSubmit error:", message);
-
-    if (/activation/i.test(message)) {
       return {
         ok: false,
-        provider: "formsubmit",
         error:
-          `FormSubmit needs activation — check ${to} for an "Activate Form" email (also spam).`,
+          "We could not send your message right now. Please try again.",
       };
     }
 
-    return { ok: false, provider: "formsubmit", error: message };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[contact] FormSubmit exception:", message);
-    return { ok: false, provider: "formsubmit", error: message };
+    if (!data?.id) {
+      console.error(
+        "[contact] Resend returned no email ID.",
+      );
+
+      return {
+        ok: false,
+        error:
+          "We could not send your message right now. Please try again.",
+      };
+    }
+
+    console.info("[contact] Email sent successfully:", data.id);
+
+    return {
+      ok: true,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown email error";
+
+    console.error("[contact] Resend exception:", message);
+
+    return {
+      ok: false,
+      error:
+        "We could not send your message right now. Please try again.",
+    };
   }
-}
-
-function userFacingError(results: ProviderResult[]): string {
-  const failures = results.filter(
-    (r): r is Extract<ProviderResult, { ok: false }> => !r.ok,
-  );
-
-  const formSubmit = failures.find((r) => r.provider === "formsubmit");
-  if (formSubmit && /activation/i.test(formSubmit.error)) {
-    return formSubmit.error;
-  }
-
-  const resend = failures.find((r) => r.provider === "resend");
-  if (
-    resend &&
-    /only send testing emails|verify a domain|not authorized/i.test(resend.error)
-  ) {
-    return (
-      "Email is almost set up. Resend can only send to your Resend account email " +
-      "until you verify a domain at resend.com/domains — or activate FormSubmit in your inbox."
-    );
-  }
-
-  if (resend && /RESEND_API_KEY is not set/i.test(resend.error)) {
-    return (
-      "Email is not configured yet. Add RESEND_API_KEY (and CONTACT_TO_EMAIL) " +
-      "in Vercel environment variables, then redeploy."
-    );
-  }
-
-  return "We could not send your message right now. Please try again later.";
-}
-
-export async function sendContactEmail(
-  payload: ContactPayload,
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const to = getToEmail();
-  if (!to) {
-    return { ok: false, error: "Email service is not configured." };
-  }
-
-  const results: ProviderResult[] = [];
-
-  const resendResult = await sendViaResend(payload, to);
-  results.push(resendResult);
-  if (resendResult.ok) return { ok: true };
-
-  const formSubmitResult = await sendViaFormSubmit(payload, to);
-  results.push(formSubmitResult);
-  if (formSubmitResult.ok) return { ok: true };
-
-  return { ok: false, error: userFacingError(results) };
 }
