@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import { getGalleryPickerImages } from "@/lib/gallery-images";
 import { canSaveEvents, getSiteEvent, getStorageStatus } from "@/lib/settings";
+import { getSignups } from "@/lib/signups";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const event = await getSiteEvent();
+  const [event, signups] = await Promise.all([getSiteEvent(), getSignups()]);
   const galleryImages = getGalleryPickerImages();
 
   // Ensure the currently selected image appears in the picker even if uploaded.
@@ -28,6 +29,7 @@ export default async function AdminPage() {
         storageStatus={getStorageStatus()}
         canSave={canSaveEvents()}
         galleryImages={picker}
+        initialSignups={signups}
       />
     </main>
   );

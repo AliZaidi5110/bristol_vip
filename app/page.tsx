@@ -3,6 +3,7 @@ import Hero from "@/components/Hero";
 import About from "@/components/About";
 import EventSpotlight from "@/components/EventSpotlight";
 import Gallery from "@/components/Gallery";
+import SignUp from "@/components/SignUp";
 import Footer from "@/components/Footer";
 import { getSiteEvent } from "@/lib/settings";
 
@@ -21,6 +22,7 @@ export default async function HomePage() {
         <About />
         <EventSpotlight event={event} />
         <Gallery />
+        <SignUp />
       </main>
       <Footer />
     </>

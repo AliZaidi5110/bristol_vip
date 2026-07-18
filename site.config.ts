@@ -173,9 +173,10 @@ export const siteConfig = {
       formSubtext: "Complete your details below and we'll get back to you.",
     },
     mailingList: {
-      heading: "Our Mailing List",
+      kicker: "Stay in the loop",
+      heading: "Sign up now",
       description:
-        "The buzz of a Bristol VIP party is always the talk of the city and has people reminiscing for many days, weeks and months afterwards. Join our mailing list to be the first in the know of all events, promotions and offers!",
+        "Bristol VIP Events delivers the freshest community nights and cultural celebrations across the city. Sign up to be first for tickets, offers and exclusive vibes.",
     },
   },
 

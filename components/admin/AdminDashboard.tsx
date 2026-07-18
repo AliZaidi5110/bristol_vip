@@ -15,6 +15,8 @@ import {
 import { siteConfig } from "@/site.config";
 import { ADMIN_LOGIN_PATH } from "@/lib/routes";
 import type { SiteEventSettings } from "@/lib/settings";
+import type { SignupEntry } from "@/lib/signups";
+import SignupsPanel from "./SignupsPanel";
 
 type Toast = { type: "success" | "error"; text: string } | null;
 
@@ -31,11 +33,13 @@ export default function AdminDashboard({
   storageStatus,
   canSave,
   galleryImages,
+  initialSignups,
 }: {
   initialEvent: SiteEventSettings;
   storageStatus: string;
   canSave: boolean;
   galleryImages: string[];
+  initialSignups: SignupEntry[];
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -424,6 +428,8 @@ export default function AdminDashboard({
           </div>
         )}
       </div>
+
+      <SignupsPanel initialSignups={initialSignups} />
     </div>
   );
 }

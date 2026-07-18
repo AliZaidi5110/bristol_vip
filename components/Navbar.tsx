@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: "About", href: "#about" },
   { label: "Event", href: "#event" },
   { label: "Gallery", href: "#gallery" },
+  { label: "Sign up", href: "#signup" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -49,6 +50,12 @@ export default function Navbar({ ticketLink }: { ticketLink: string }) {
               </li>
             ))}
           </ul>
+          <a
+            href="#signup"
+            className="rounded-full border border-gold/50 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-gold transition hover:bg-gold/10"
+          >
+            Sign up now
+          </a>
           <GetTicketsButton href={ticketLink} className="!px-5 !py-2.5" />
         </div>
 
@@ -77,7 +84,16 @@ export default function Navbar({ ticketLink }: { ticketLink: string }) {
                 </a>
               </li>
             ))}
-            <li className="px-3 pt-3">
+            <li className="px-3 pt-2">
+              <a
+                href="#signup"
+                onClick={() => setOpen(false)}
+                className="block rounded-full border border-gold/40 bg-gold/10 px-4 py-3 text-center text-sm font-semibold uppercase tracking-widest text-gold"
+              >
+                Sign up now
+              </a>
+            </li>
+            <li className="px-3 pt-2">
               <GetTicketsButton href={ticketLink} className="w-full" />
             </li>
           </ul>
