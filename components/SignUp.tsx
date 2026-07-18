@@ -40,7 +40,9 @@ export default function SignUp() {
       address: String(data.get("address") ?? "").trim(),
       phone,
       gender: String(data.get("gender") ?? "").trim(),
-      bve_hp_field: String(data.get("bve_hp_field") ?? ""),
+      // Never read the honeypot from the DOM — browsers/password managers
+      // autofill hidden fields, which made the API return success without saving.
+      bve_hp_field: "",
     };
 
     try {
@@ -95,14 +97,8 @@ export default function SignUp() {
         <Reveal delay={100}>
           <div className="mt-10 rounded-2xl border border-white/15 bg-black/55 p-6 shadow-2xl backdrop-blur-md sm:p-8">
             <form onSubmit={onSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="bve_hp_field"
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
-              />
+              {/* Honeypot is enforced only on the API for raw JSON spam.
+                  Do not put a named hidden input here — browsers autofill it. */}
 
               <input
                 name="firstName"

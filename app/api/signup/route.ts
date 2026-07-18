@@ -39,8 +39,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  // Honeypot: only reject obvious bot posts. Do not pretend success for
+  // autofilled hidden fields from real browsers (that hid real failures).
   if (honeypot) {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ error: "Could not join the list. Please try again." }, { status: 400 });
   }
 
   if (!firstName || firstName.length > 80) {
