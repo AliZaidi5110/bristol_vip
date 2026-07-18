@@ -1,4 +1,15 @@
 {
-  "signups": [],
-  "updatedAt": "2026-07-18T00:00:00.000Z"
+  "signups": [
+    {
+      "id": "16836e07-8fc9-467a-96a3-5a43b738955a",
+      "firstName": "Diag",
+      "surname": "Test",
+      "email": "diag.test.1177527727@example.com",
+      "address": "1 Test Street Bristol",
+      "phone": "+44 7700123456",
+      "gender": "Prefer not to say",
+      "createdAt": "2026-07-18T07:36:10.710Z"
+    }
+  ],
+  "updatedAt": "2026-07-18T07:36:10.914Z"
 }
