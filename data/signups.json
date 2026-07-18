@@ -1,6 +1,16 @@
 {
   "signups": [
     {
+      "id": "0129c3c5-1af7-41e1-97ec-5d6c6e228f59",
+      "firstName": "ali haider",
+      "surname": "zaidi",
+      "email": "zydev101@gmail.com",
+      "address": "R 161 B jhangi muhallah bani chowk circular road,rwp",
+      "phone": "+44 7441999262",
+      "gender": "Non-binary",
+      "createdAt": "2026-07-18T09:39:21.543Z"
+    },
+    {
       "id": "7fea0afe-ca7f-4907-9ddf-edd816d383b5",
       "firstName": "Live",
       "surname": "Probe",
@@ -41,5 +51,5 @@
       "createdAt": "2026-07-18T07:36:10.710Z"
     }
   ],
-  "updatedAt": "2026-07-18T08:57:07.220Z"
+  "updatedAt": "2026-07-18T09:39:21.807Z"
 }
