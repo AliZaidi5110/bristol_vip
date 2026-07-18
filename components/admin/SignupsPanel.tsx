@@ -4,6 +4,45 @@ import { useEffect, useState } from "react";
 import { Download, Loader2, RefreshCw, Users } from "lucide-react";
 import type { SignupEntry } from "@/lib/signups";
 
+function toCsv(signups: SignupEntry[]): string {
+  const header = [
+    "First Name",
+    "Surname",
+    "Email",
+    "Address",
+    "Phone",
+    "Gender",
+    "Submitted At",
+  ];
+  const escape = (value: string) => `"${value.replace(/\r?\n/g, " ").replace(/"/g, '""')}"`;
+  const rows = signups.map((s) =>
+    [
+      s.firstName,
+      s.surname,
+      s.email,
+      s.address,
+      s.phone,
+      s.gender,
+      s.createdAt,
+    ]
+      .map(escape)
+      .join(","),
+  );
+  return `\uFEFF${[header.map(escape).join(","), ...rows].join("\r\n")}\r\n`;
+}
+
+function downloadTextFile(filename: string, content: string) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function SignupsPanel({
   initialSignups,
 }: {
@@ -13,29 +52,34 @@ export default function SignupsPanel({
   const [downloading, setDownloading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   async function refresh() {
     setRefreshing(true);
     setError("");
+    setInfo("");
     try {
       const res = await fetch(`/api/admin/signups?t=${Date.now()}`, {
         method: "GET",
-        credentials: "same-origin",
+        credentials: "include",
         cache: "no-store",
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(json?.error || "Could not load sign-ups.");
+        throw new Error(json?.error || "Could not load sign-ups (are you logged in?).");
       }
-      setSignups(Array.isArray(json.signups) ? json.signups : []);
+      const list = Array.isArray(json.signups) ? json.signups : [];
+      setSignups(list);
+      setInfo(`Loaded ${list.length} sign-up${list.length === 1 ? "" : "s"}.`);
+      return list as SignupEntry[];
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not refresh sign-ups.");
+      return null;
     } finally {
       setRefreshing(false);
     }
   }
 
-  // Always load fresh data when the dashboard opens (don't trust a stale SSR list).
   useEffect(() => {
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -44,47 +88,24 @@ export default function SignupsPanel({
   async function downloadCsv() {
     setDownloading(true);
     setError("");
+    setInfo("");
     try {
-      // Refresh first so CSV matches the latest GitHub data.
-      const listRes = await fetch(`/api/admin/signups?t=${Date.now()}`, {
-        method: "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-      const listJson = await listRes.json().catch(() => ({}));
-      if (listRes.ok && Array.isArray(listJson.signups)) {
-        setSignups(listJson.signups);
-      }
+      // 1) Prefer fresh server list
+      const latest = await refresh();
+      const rows = latest && latest.length > 0 ? latest : signups;
 
-      const res = await fetch(`/api/admin/signups?format=csv&t=${Date.now()}`, {
-        method: "GET",
-        credentials: "same-origin",
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        throw new Error("Download failed");
-      }
-      const blob = await res.blob();
-      const text = await blob.text();
-      // Guard: empty CSV is only a header line
-      const lines = text.trim().split(/\r?\n/).filter(Boolean);
-      if (lines.length <= 1) {
-        setError(
-          "CSV is empty — no sign-ups found in storage yet. Submit the form again, wait 10 seconds, then Refresh.",
-        );
+      if (rows.length > 0) {
+        // Client-side export from the table — most reliable for Excel
+        const stamp = new Date().toISOString().slice(0, 10);
+        downloadTextFile(`bristol-vip-signups-${stamp}.csv`, toCsv(rows));
+        setInfo(`Downloaded ${rows.length} sign-up${rows.length === 1 ? "" : "s"} as CSV.`);
         return;
       }
 
-      const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `bristol-vip-signups-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // 2) Fallback: open server CSV endpoint in the same tab (sends cookies)
+      window.location.href = `/api/admin/signups?format=csv&t=${Date.now()}`;
     } catch {
-      setError("Could not download CSV. Please try again.");
+      setError("Could not download CSV. Click Refresh first, then try again.");
     } finally {
       setDownloading(false);
     }
@@ -141,13 +162,17 @@ export default function SignupsPanel({
           {error}
         </p>
       )}
+      {info && !error && (
+        <p className="mt-4 rounded-lg border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
+          {info}
+        </p>
+      )}
 
       {signups.length === 0 ? (
         <p className="mt-6 rounded-lg border border-ink-line bg-ink px-4 py-6 text-center text-sm text-white/50">
-          No sign-ups loaded yet. Click <span className="text-white/80">Refresh</span>{" "}
-          after someone submits the form. Use the live site{" "}
-          <span className="text-white/70">bristol-vip-pi.vercel.app</span> (not the
-          old bristol-vip.vercel.app).
+          No sign-ups in the table yet. Click <span className="text-white/80">Refresh</span>.
+          If still empty, you are on the wrong site — use{" "}
+          <span className="text-white/70">bristol-vip-pi.vercel.app/admin</span> only.
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-xl border border-ink-line">
@@ -191,8 +216,7 @@ export default function SignupsPanel({
       )}
 
       <p className="mt-4 text-xs text-white/40">
-        CSV opens in Excel / Google Sheets. Admin URL must be{" "}
-        <code className="text-white/60">bristol-vip-pi.vercel.app/admin</code>.
+        Download CSV exports whatever is shown in the table above (opens in Excel).
       </p>
     </div>
   );

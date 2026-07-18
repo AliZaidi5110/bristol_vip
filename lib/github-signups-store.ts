@@ -91,19 +91,53 @@ async function getFromGitHubApi(): Promise<SignupEntry[] | null> {
 }
 
 export async function getSignupsFromGitHub(): Promise<SignupEntry[]> {
-  // 1) Authenticated API (freshest)
   const fromApi = await getFromGitHubApi();
   if (fromApi && fromApi.length > 0) return fromApi;
 
-  // 2) Public raw URL (works even if API token read fails)
   const fromRaw = await getFromRawUrl();
   if (fromRaw.length > 0) return fromRaw;
 
-  // 3) API returned empty list intentionally
   if (fromApi) return fromApi;
-
-  // 4) File bundled in this deployment
   return getFromLocalFile();
+}
+
+async function putSignups(
+  signups: SignupEntry[],
+  sha?: string,
+): Promise<{ ok: true } | { ok: false; conflict: boolean }> {
+  const auth = token();
+  if (!auth) return { ok: false, conflict: false };
+
+  const apiBase = `https://api.github.com/repos/${repo()}/contents/${SIGNUPS_PATH}`;
+  const payload = {
+    signups,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const res = await fetch(apiBase, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${auth}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: `Add mailing list signup (${signups[0]?.email ?? "update"})`,
+      content: Buffer.from(JSON.stringify(payload, null, 2) + "\n").toString(
+        "base64",
+      ),
+      branch: branch(),
+      ...(sha ? { sha } : {}),
+    }),
+  });
+
+  if (res.ok) return { ok: true };
+  if (res.status === 409) return { ok: false, conflict: true };
+
+  const errText = await res.text().catch(() => "");
+  console.error("[signups] GitHub save failed:", res.status, errText);
+  return { ok: false, conflict: false };
 }
 
 export async function setSignupsOnGitHub(
@@ -118,51 +152,35 @@ export async function setSignupsOnGitHub(
     Authorization: `Bearer ${auth}`,
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
-    "Content-Type": "application/json",
   };
 
-  let sha: string | undefined;
-  try {
-    const existing = await fetch(`${apiBase}?ref=${branch()}`, {
-      headers,
-      cache: "no-store",
-    });
-    if (existing.ok) {
-      const meta = (await existing.json()) as { sha?: string };
-      sha = meta.sha;
-    }
-  } catch {
-    return false;
-  }
-
-  const payload = {
-    signups,
-    updatedAt: new Date().toISOString(),
-  };
-
-  try {
-    const res = await fetch(apiBase, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        message: `Add mailing list signup (${signups[0]?.email ?? "update"})`,
-        content: Buffer.from(JSON.stringify(payload, null, 2) + "\n").toString(
-          "base64",
-        ),
-        branch: branch(),
-        ...(sha ? { sha } : {}),
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("[signups] GitHub save failed:", res.status, errText);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let sha: string | undefined;
+    try {
+      const existing = await fetch(`${apiBase}?ref=${branch()}`, {
+        headers,
+        cache: "no-store",
+      });
+      if (existing.ok) {
+        const meta = (await existing.json()) as { sha?: string };
+        sha = meta.sha;
+      }
+    } catch {
       return false;
     }
-    return true;
-  } catch (err) {
-    console.error("[signups] GitHub save exception:", err);
-    return false;
+
+    try {
+      const result = await putSignups(signups, sha);
+      if (result.ok) return true;
+      if (!result.conflict) return false;
+      // 409 conflict — retry with a fresh SHA
+    } catch (err) {
+      console.error("[signups] GitHub save exception:", err);
+      return false;
+    }
   }
+
+  return false;
 }
 
 export { hasGitHubWrite };

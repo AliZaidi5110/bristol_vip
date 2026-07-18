@@ -150,16 +150,17 @@ export async function addSignup(
     stored = (await setSignupsOnGitHub(next)) || stored;
   }
 
-  const emailed = await notifyAdmin(entry);
+  // Email is a bonus notification — CSV depends on storage succeeding.
+  void notifyAdmin(entry);
 
-  if (stored || emailed) {
+  if (stored) {
     return { ok: true, entry };
   }
 
   return {
     ok: false,
     error:
-      "Sign-ups are not configured yet. Add GITHUB_TOKEN (and RESEND_API_KEY) in Vercel, then redeploy.",
+      "Could not save your sign-up. Ask the site admin to set GITHUB_TOKEN in Vercel, then try again.",
   };
 }
 
