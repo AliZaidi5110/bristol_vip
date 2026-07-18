@@ -30,9 +30,16 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({
-    ok: true,
-    count: signups.length,
-    signups,
-  });
+  return NextResponse.json(
+    {
+      ok: true,
+      count: signups.length,
+      signups,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    },
+  );
 }

@@ -44,6 +44,20 @@ async function getFromLocalFile(): Promise<SignupEntry[]> {
   }
 }
 
+async function getFromRawUrl(): Promise<SignupEntry[]> {
+  try {
+    const url = `https://raw.githubusercontent.com/${repo()}/${branch()}/${SIGNUPS_PATH}?t=${Date.now()}`;
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: { Accept: "application/json", "Cache-Control": "no-cache" },
+    });
+    if (!res.ok) return [];
+    return parseSignups(await res.json());
+  } catch {
+    return [];
+  }
+}
+
 async function getFromGitHubApi(): Promise<SignupEntry[] | null> {
   const auth = token();
   if (!auth) return null;
@@ -59,20 +73,36 @@ async function getFromGitHubApi(): Promise<SignupEntry[] | null> {
       },
     });
     if (res.status === 404) return [];
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("[signups] GitHub API read failed:", res.status);
+      return null;
+    }
 
     const meta = (await res.json()) as { content?: string };
     if (!meta.content) return [];
-    const decoded = Buffer.from(meta.content, "base64").toString("utf8");
+    const decoded = Buffer.from(meta.content.replace(/\n/g, ""), "base64").toString(
+      "utf8",
+    );
     return parseSignups(JSON.parse(decoded));
-  } catch {
+  } catch (err) {
+    console.error("[signups] GitHub API read exception:", err);
     return null;
   }
 }
 
 export async function getSignupsFromGitHub(): Promise<SignupEntry[]> {
+  // 1) Authenticated API (freshest)
   const fromApi = await getFromGitHubApi();
+  if (fromApi && fromApi.length > 0) return fromApi;
+
+  // 2) Public raw URL (works even if API token read fails)
+  const fromRaw = await getFromRawUrl();
+  if (fromRaw.length > 0) return fromRaw;
+
+  // 3) API returned empty list intentionally
   if (fromApi) return fromApi;
+
+  // 4) File bundled in this deployment
   return getFromLocalFile();
 }
 
