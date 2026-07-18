@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
     address = typeof body?.address === "string" ? body.address.trim() : "";
     phone = typeof body?.phone === "string" ? body.phone.trim() : "";
     gender = typeof body?.gender === "string" ? body.gender.trim() : "";
-    honeypot = typeof body?.website === "string" ? body.website.trim() : "";
+    // Do not name this "website" — browsers autofill that and fake a success.
+    honeypot =
+      typeof body?.bve_hp_field === "string" ? body.bve_hp_field.trim() : "";
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }

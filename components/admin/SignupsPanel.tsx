@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2, Users } from "lucide-react";
+import { Download, Loader2, RefreshCw, Users } from "lucide-react";
 import type { SignupEntry } from "@/lib/signups";
 
 export default function SignupsPanel({
@@ -9,8 +9,27 @@ export default function SignupsPanel({
 }: {
   initialSignups: SignupEntry[];
 }) {
-  const [signups] = useState(initialSignups);
+  const [signups, setSignups] = useState(initialSignups);
   const [downloading, setDownloading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/admin/signups", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error("refresh failed");
+      setSignups(Array.isArray(json.signups) ? json.signups : []);
+    } catch {
+      alert("Could not refresh sign-ups. Please reload the page.");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function downloadCsv() {
     setDownloading(true);
@@ -18,6 +37,7 @@ export default function SignupsPanel({
       const res = await fetch("/api/admin/signups?format=csv", {
         method: "GET",
         credentials: "same-origin",
+        cache: "no-store",
       });
       if (!res.ok) {
         throw new Error("Download failed");
@@ -54,24 +74,42 @@ export default function SignupsPanel({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={downloadCsv}
-          disabled={downloading || signups.length === 0}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm font-semibold uppercase tracking-wider text-gold transition hover:bg-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {downloading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
-          {downloading ? "Preparing…" : "Download CSV"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={refreshing}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-4 py-2.5 text-sm font-semibold uppercase tracking-wider text-white/80 transition hover:border-white/40 disabled:opacity-50"
+          >
+            {refreshing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={downloadCsv}
+            disabled={downloading || signups.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm font-semibold uppercase tracking-wider text-gold transition hover:bg-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {downloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {downloading ? "Preparing…" : "Download CSV"}
+          </button>
+        </div>
       </div>
 
       {signups.length === 0 ? (
         <p className="mt-6 rounded-lg border border-ink-line bg-ink px-4 py-6 text-center text-sm text-white/50">
-          No sign-ups yet. When customers submit the form, they will appear here.
+          No sign-ups stored yet. Submit the form again after this fix, then click
+          Refresh. Also check{" "}
+          <span className="text-white/70">bristolvip1@gmail.com</span> — new
+          sign-ups are emailed there too.
         </p>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-xl border border-ink-line">
@@ -111,8 +149,9 @@ export default function SignupsPanel({
       )}
 
       <p className="mt-4 text-xs text-white/40">
-        CSV opens in Excel, Google Sheets, or Numbers. Columns: First Name, Surname,
-        Email, Address, Phone, Gender, Submitted At.
+        CSV opens in Excel, Google Sheets, or Numbers. Needs{" "}
+        <code className="text-white/60">GITHUB_TOKEN</code> on Vercel to store
+        rows for download.
       </p>
     </div>
   );

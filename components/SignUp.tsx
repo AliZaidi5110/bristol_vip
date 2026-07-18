@@ -40,7 +40,7 @@ export default function SignUp() {
       address: String(data.get("address") ?? "").trim(),
       phone,
       gender: String(data.get("gender") ?? "").trim(),
-      website: String(data.get("website") ?? ""),
+      bve_hp_field: String(data.get("bve_hp_field") ?? ""),
     };
 
     try {
@@ -97,7 +97,7 @@ export default function SignUp() {
             <form onSubmit={onSubmit} className="space-y-4">
               <input
                 type="text"
-                name="website"
+                name="bve_hp_field"
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"

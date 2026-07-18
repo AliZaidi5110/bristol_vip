@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { kv } from "@vercel/kv";
+import { sendContactEmail } from "./email";
 import {
   getSignupsFromGitHub,
   hasGitHubWrite,
@@ -52,6 +53,8 @@ async function getFromKv(): Promise<SignupEntry[] | null> {
   if (!hasKv()) return null;
   try {
     const stored = await kv.get<SignupEntry[]>(KV_SIGNUPS_KEY);
+    // null = key missing → fall through to GitHub (do not treat as empty list)
+    if (stored == null) return null;
     return normalizeList(stored);
   } catch {
     return null;
@@ -68,14 +71,49 @@ async function setOnKv(signups: SignupEntry[]): Promise<boolean> {
   }
 }
 
-export async function getSignups(): Promise<SignupEntry[]> {
-  const fromKv = await getFromKv();
-  if (fromKv) {
-    return [...fromKv].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+function mergeSignups(
+  a: SignupEntry[],
+  b: SignupEntry[],
+): SignupEntry[] {
+  const byEmail = new Map<string, SignupEntry>();
+  for (const entry of [...a, ...b]) {
+    const key = entry.email.toLowerCase();
+    const prev = byEmail.get(key);
+    if (!prev || entry.createdAt > prev.createdAt) {
+      byEmail.set(key, entry);
+    }
   }
+  return [...byEmail.values()].sort((x, y) =>
+    y.createdAt.localeCompare(x.createdAt),
+  );
+}
 
-  const fromGitHub = await getSignupsFromGitHub();
-  return [...fromGitHub].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function getSignups(): Promise<SignupEntry[]> {
+  const [fromKv, fromGitHub] = await Promise.all([
+    getFromKv(),
+    getSignupsFromGitHub(),
+  ]);
+
+  return mergeSignups(fromKv ?? [], fromGitHub);
+}
+
+async function notifyAdmin(entry: SignupEntry): Promise<boolean> {
+  const result = await sendContactEmail({
+    name: `${entry.firstName} ${entry.surname}`,
+    email: entry.email,
+    message: [
+      "New mailing list sign-up from the website:",
+      "",
+      `First name: ${entry.firstName}`,
+      `Surname: ${entry.surname}`,
+      `Email: ${entry.email}`,
+      `Phone: ${entry.phone}`,
+      `Address: ${entry.address}`,
+      `Gender: ${entry.gender}`,
+      `Submitted: ${entry.createdAt}`,
+    ].join("\n"),
+  });
+  return result.ok;
 }
 
 export async function addSignup(
@@ -102,19 +140,26 @@ export async function addSignup(
 
   const next = [entry, ...existing];
 
-  if (await setOnKv(next)) {
-    return { ok: true, entry };
+  let stored = false;
+
+  // Prefer writing to every available backend so admin CSV stays in sync.
+  if (hasKv()) {
+    stored = (await setOnKv(next)) || stored;
+  }
+  if (hasGitHubWrite()) {
+    stored = (await setSignupsOnGitHub(next)) || stored;
   }
 
-  if (hasGitHubWrite()) {
-    const saved = await setSignupsOnGitHub(next);
-    if (saved) return { ok: true, entry };
+  const emailed = await notifyAdmin(entry);
+
+  if (stored || emailed) {
+    return { ok: true, entry };
   }
 
   return {
     ok: false,
     error:
-      "Sign-ups are not configured yet. Add GITHUB_TOKEN in Vercel environment variables, then redeploy.",
+      "Sign-ups are not configured yet. Add GITHUB_TOKEN (and RESEND_API_KEY) in Vercel, then redeploy.",
   };
 }
 
