@@ -29,7 +29,7 @@ export default function EventSpotlight({ event }: { event: SiteEventSettings }) 
                 alt={`${event.title} flyer`}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-center"
+                className="object-contain object-center bg-black"
                 priority
               />
             </div>
